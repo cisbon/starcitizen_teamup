@@ -471,56 +471,7 @@
             <a href="https://ko-fi.com/starcitizenteam" target="_blank" rel="noopener noreferrer" class="kofi-button">☕ Support on Ko-Fi</a>
         </header>
 
-        <!-- LFG Section (Now First) -->
-        <section class="lfg-section">
-            <h2>Looking for Group (LFG)</h2>
-
-            <!-- Filters -->
-            <div class="filters-container">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="filterActivity">Activity Type</label>
-                        <select id="filterActivity">
-                            <option value="">All Activities</option>
-                            <option value="Bounty Hunting">Bounty Hunting</option>
-                            <option value="Mining">Mining</option>
-                            <option value="Salvaging">Salvaging</option>
-                            <option value="Trading">Trading</option>
-                            <option value="Mercenary">Mercenary</option>
-                            <option value="Investigations">Investigations</option>
-                            <option value="Search and Rescue">Search and Rescue</option>
-                            <option value="Piracy">Piracy</option>
-                            <option value="PVP">PVP</option>
-                            <option value="Exploration">Exploration</option>
-                            <option value="Xenothreat">Xenothreat</option>
-                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="filterShip">Ship</label>
-                        <input type="text" id="filterShip" placeholder="e.g., Idris, Carrack, etc." autocomplete="off">
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="filterSearch">Search</label>
-                        <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="filter-actions">
-                    <button class="clear-filters-btn" id="clearFilters">Clear Filters</button>
-                    <span class="results-count" id="resultsCount"></span>
-                </div>
-            </div>
-
-            <div id="groupsContainer" class="groups-container">
-                <div class="loading">Loading groups...</div>
-            </div>
-        </section>
-
-        <!-- Create Group Section (Now Second, Collapsible) -->
+         <!-- Create Group Section (Now Second, Collapsible) -->
         <section class="create-group-section">
             <div class="section-header" id="createGroupHeader">
                 <h2>Create a New Group</h2>
@@ -619,6 +570,55 @@
 
                     <button type="submit" id="submitButton">Create Group</button>
                 </form>
+            </div>
+        </section>
+
+        <!-- LFG Section  -->
+        <section class="lfg-section">
+            <h2>Looking for Group (LFG)</h2>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="filterActivity">Activity Type</label>
+                        <select id="filterActivity">
+                            <option value="">All Activities</option>
+                            <option value="Bounty Hunting">Bounty Hunting</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Salvaging">Salvaging</option>
+                            <option value="Trading">Trading</option>
+                            <option value="Mercenary">Mercenary</option>
+                            <option value="Investigations">Investigations</option>
+                            <option value="Search and Rescue">Search and Rescue</option>
+                            <option value="Piracy">Piracy</option>
+                            <option value="PVP">PVP</option>
+                            <option value="Exploration">Exploration</option>
+                            <option value="Xenothreat">Xenothreat</option>
+                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterShip">Ship</label>
+                        <input type="text" id="filterShip" placeholder="e.g., Idris, Carrack, etc." autocomplete="off">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterSearch">Search</label>
+                        <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="clear-filters-btn" id="clearFilters">Clear Filters</button>
+                    <span class="results-count" id="resultsCount"></span>
+                </div>
+            </div>
+
+            <div id="groupsContainer" class="groups-container">
+                <div class="loading">Loading groups...</div>
             </div>
         </section>
     </div>
