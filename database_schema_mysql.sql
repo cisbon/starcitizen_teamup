@@ -5,6 +5,36 @@
 -- CREATE DATABASE IF NOT EXISTS starcitizen_teamup CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- USE starcitizen_teamup;
 
+-- Activity Types Table
+CREATE TABLE IF NOT EXISTS `starcitizen_teamup_activity_types` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(50) NOT NULL UNIQUE,
+  `display_order` INT NOT NULL DEFAULT 0,
+  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Indexes
+  INDEX `idx_display_order` (`display_order`),
+  INDEX `idx_is_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default activity types
+INSERT INTO `starcitizen_teamup_activity_types` (`name`, `display_order`) VALUES
+('Bounty Hunting', 1),
+('Mining', 2),
+('Salvaging', 3),
+('Trading', 4),
+('Mercenary', 5),
+('Investigations', 6),
+('Search and Rescue', 7),
+('Piracy', 8),
+('PVP', 9),
+('Exploration', 10),
+('Xenothreat', 11),
+('Nine Tails Lockdown', 12),
+('Other', 99)
+ON DUPLICATE KEY UPDATE display_order = VALUES(display_order);
+
 -- Groups Table
 CREATE TABLE IF NOT EXISTS `starcitizen_teamup_groups` (
   `id` CHAR(36) PRIMARY KEY,
@@ -24,13 +54,6 @@ CREATE TABLE IF NOT EXISTS `starcitizen_teamup_groups` (
     CHAR_LENGTH(creator_handle) >= 3 AND
     CHAR_LENGTH(creator_handle) <= 50 AND
     creator_handle REGEXP '^[a-zA-Z0-9_-]+$'
-  ),
-  CONSTRAINT `chk_activity_type` CHECK (
-    activity_type IN (
-      'Bounty Hunting', 'Mining', 'Salvaging', 'Trading', 'Mercenary',
-      'Investigations', 'Search and Rescue', 'Piracy', 'PVP',
-      'Exploration', 'Xenothreat', 'Nine Tails Lockdown', 'Other'
-    )
   ),
   CONSTRAINT `chk_title` CHECK (
     CHAR_LENGTH(title) >= 3 AND CHAR_LENGTH(title) <= 100
@@ -98,11 +121,13 @@ CREATE TABLE IF NOT EXISTS `rate_limits` (
 -- DELETE FROM rate_limits WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR);
 
 -- Example: Create a stored procedure to clean expired groups (optional)
+-- This deletes expired groups based on their status and expiry time:
+-- - Full groups: expire after 10 minutes
+-- - Non-full groups: expire after 2 hours
 DELIMITER //
 CREATE PROCEDURE IF NOT EXISTS clean_expired_groups()
 BEGIN
-  UPDATE starcitizen_teamup_groups
-  SET status = 'closed'
+  DELETE FROM starcitizen_teamup_groups
   WHERE status IN ('open', 'full')
   AND expires_at < NOW();
 END //

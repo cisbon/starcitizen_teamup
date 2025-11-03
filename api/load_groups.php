@@ -21,10 +21,10 @@ if ($method !== 'GET' && $method !== 'HEAD') {
 try {
     $pdo = getDbConnection();
 
-    // First, check and close expired groups
+    // First, delete expired groups
+    // Non-full groups expire after 2 hours, full groups after 10 minutes
     $pdo->exec("
-        UPDATE starcitizen_teamup_groups
-        SET status = 'closed'
+        DELETE FROM starcitizen_teamup_groups
         WHERE status IN ('open', 'full')
         AND expires_at < NOW()
     ");

@@ -82,7 +82,8 @@ try {
 
     // Create group with UUID
     $groupId = generateUuid();
-    $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+    // Non-full groups expire after 2 hours
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+2 hours'));
 
     $stmt = $pdo->prepare("
         INSERT INTO starcitizen_teamup_groups

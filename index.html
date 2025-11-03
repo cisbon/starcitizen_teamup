@@ -445,6 +445,32 @@
             word-wrap: break-word;
         }
 
+        .group-timer {
+            color: #999;
+            font-size: 0.75em;
+            text-align: center;
+            margin-top: 10px;
+            padding: 6px;
+            background: rgba(173, 211, 235, 0.05);
+            border-top: 1px solid #2a4a5e;
+            cursor: help;
+            transition: all 0.3s ease;
+        }
+
+        .group-timer:hover {
+            background: rgba(173, 211, 235, 0.1);
+            color: #add3eb;
+        }
+
+        .group-timer.warning {
+            color: #ffaa00;
+        }
+
+        .group-timer.critical {
+            color: #ff6464;
+            animation: pulse 2s infinite;
+        }
+
         .join-button {
             width: 100%;
             padding: 12px;
@@ -1163,13 +1189,11 @@
             MAX_PLAYERS: {
                 MIN: 2,
                 MAX: 50
-            },
-            ACTIVITY_TYPES: [
-                'Bounty Hunting', 'Mining', 'Salvaging', 'Trading', 'Mercenary',
-                'Investigations', 'Search and Rescue', 'Piracy', 'PVP',
-                'Exploration', 'Xenothreat', 'Nine Tails Lockdown', 'Other'
-            ]
+            }
         };
+
+        // Store activity types loaded from database
+        let activityTypes = [];
 
         // Store all groups for filtering
         let allGroups = [];
@@ -1279,7 +1303,7 @@
         }
 
         function validateActivityType(activityType) {
-            return VALIDATION.ACTIVITY_TYPES.includes(activityType);
+            return activityTypes.some(type => type.name === activityType);
         }
 
         function validateMaxPlayers(maxPlayers) {
@@ -1316,6 +1340,42 @@
         }
 
         // ============================================
+        // TIMER FUNCTIONS
+        // ============================================
+
+        function formatTimeRemaining(expiresAt) {
+            const now = new Date();
+            const expires = new Date(expiresAt);
+            const diff = expires - now;
+
+            if (diff <= 0) return { text: 'Expired', class: 'critical' };
+
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            let timerClass = '';
+            if (minutes < 2) {
+                timerClass = 'critical';
+            } else if (minutes < 10) {
+                timerClass = 'warning';
+            }
+
+            if (minutes >= 60) {
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                return {
+                    text: `${hours}h ${remainingMinutes}m remaining`,
+                    class: timerClass
+                };
+            } else {
+                return {
+                    text: `${minutes}m ${seconds}s remaining`,
+                    class: timerClass
+                };
+            }
+        }
+
+        // ============================================
         // CORE FUNCTIONS
         // ============================================
 
@@ -1327,7 +1387,14 @@
                 return;
             }
 
-            groupsContainer.innerHTML = groups.map(group => `
+            groupsContainer.innerHTML = groups.map(group => {
+                const timer = formatTimeRemaining(group.expires_at);
+                const isFull = parseInt(group.memberCount) >= parseInt(group.max_players);
+                const timerTooltip = isFull
+                    ? 'Full groups are automatically removed after 10 minutes'
+                    : 'Groups are automatically removed after 2 hours of inactivity';
+
+                return `
                 <div class="group-card" data-group-id="${escapeHtml(group.id)}">
                     <div class="group-title">${escapeHtml(group.title)}</div>
                     <span class="group-activity">${escapeHtml(group.activity_type)}</span>
@@ -1337,9 +1404,13 @@
                         <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
                         <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
                     </div>
+                    <div class="group-timer ${timer.class}" title="${timerTooltip}">
+                        ⏱️ ${timer.text}
+                    </div>
                     <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
                 </div>
-            `).join('');
+                `;
+            }).join('');
 
             document.querySelectorAll('.join-button').forEach(button => {
                 button.addEventListener('click', function() {
@@ -1562,6 +1633,76 @@
             } finally {
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = false);
             }
+        }
+
+        // ============================================
+        // ACTIVITY TYPES MANAGEMENT
+        // ============================================
+
+        async function loadActivityTypes() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/load_activity_types.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load activity types');
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load activity types');
+                }
+
+                activityTypes = data.activity_types;
+                populateActivityTypeDropdowns();
+
+            } catch (error) {
+                console.error('Error loading activity types:', error);
+                // Fallback to hardcoded types if API fails
+                activityTypes = [
+                    { name: 'Bounty Hunting' },
+                    { name: 'Mining' },
+                    { name: 'Salvaging' },
+                    { name: 'Trading' },
+                    { name: 'Mercenary' },
+                    { name: 'Investigations' },
+                    { name: 'Search and Rescue' },
+                    { name: 'Piracy' },
+                    { name: 'PVP' },
+                    { name: 'Exploration' },
+                    { name: 'Xenothreat' },
+                    { name: 'Nine Tails Lockdown' },
+                    { name: 'Other' }
+                ];
+                populateActivityTypeDropdowns();
+            }
+        }
+
+        function populateActivityTypeDropdowns() {
+            const createDropdown = document.getElementById('activityType');
+            const filterDropdown = document.getElementById('filterActivity');
+
+            // Clear existing options except the first one
+            createDropdown.innerHTML = '<option value="">Select an activity</option>';
+            filterDropdown.innerHTML = '<option value="">All Activities</option>';
+
+            // Add options from loaded activity types
+            activityTypes.forEach(type => {
+                const createOption = document.createElement('option');
+                createOption.value = type.name;
+                createOption.textContent = type.name;
+                createDropdown.appendChild(createOption);
+
+                const filterOption = document.createElement('option');
+                filterOption.value = type.name;
+                filterOption.textContent = type.name;
+                filterDropdown.appendChild(filterOption);
+            });
         }
 
         // ============================================
@@ -2066,6 +2207,9 @@
         // ============================================
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Load activity types from database
+            await loadActivityTypes();
+
             // Initialize
             loadGroups();
 

@@ -135,12 +135,21 @@ function validateShip($ship) {
 }
 
 function validateActivityType($activityType) {
-    $validTypes = [
-        'Bounty Hunting', 'Mining', 'Salvaging', 'Trading', 'Mercenary',
-        'Investigations', 'Search and Rescue', 'Piracy', 'PVP',
-        'Exploration', 'Xenothreat', 'Nine Tails Lockdown', 'Other'
-    ];
-    return in_array($activityType, $validTypes) ? $activityType : false;
+    if (!is_string($activityType)) return false;
+    $trimmed = trim($activityType);
+    if (empty($trimmed)) return false;
+
+    // Check against database
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM starcitizen_teamup_activity_types
+        WHERE name = ? AND is_active = TRUE
+    ");
+    $stmt->execute([$trimmed]);
+    $result = $stmt->fetch();
+
+    return ($result['count'] > 0) ? $trimmed : false;
 }
 
 function validateMaxPlayers($maxPlayers) {
