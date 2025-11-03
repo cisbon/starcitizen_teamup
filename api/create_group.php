@@ -36,42 +36,42 @@ try {
     }
 
     // Validate inputs
-    $creatorHandle = validateHandle($input['creator_handle'] ?? '');
+    $creatorHandle = validateHandle(isset($input['creator_handle']) ? $input['creator_handle'] : '');
     if ($creatorHandle === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.']);
         exit;
     }
 
-    $activityType = validateActivityType($input['activity_type'] ?? '');
+    $activityType = validateActivityType(isset($input['activity_type']) ? $input['activity_type'] : '');
     if ($activityType === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid activity type.']);
         exit;
     }
 
-    $title = validateTitle($input['title'] ?? '');
+    $title = validateTitle(isset($input['title']) ? $input['title'] : '');
     if ($title === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Title must be between 3 and 100 characters.']);
         exit;
     }
 
-    $description = validateDescription($input['description'] ?? '');
+    $description = validateDescription(isset($input['description']) ? $input['description'] : '');
     if ($description === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Description must be 500 characters or less.']);
         exit;
     }
 
-    $ship = validateShip($input['ship'] ?? '');
+    $ship = validateShip(isset($input['ship']) ? $input['ship'] : '');
     if ($ship === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Ship name must be between 2 and 50 characters if provided.']);
         exit;
     }
 
-    $maxPlayers = validateMaxPlayers($input['max_players'] ?? 0);
+    $maxPlayers = validateMaxPlayers(isset($input['max_players']) ? $input['max_players'] : 0);
     if ($maxPlayers === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Max players must be between 2 and 50.']);

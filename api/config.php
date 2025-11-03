@@ -49,8 +49,9 @@ function getDbConnection() {
 
 // CORS Headers
 function setCorsHeaders() {
-    // Allow requests from your domain
-    header('Access-Control-Allow-Origin: https://starcitizen.gamer.gd');
+    // Allow requests from any domain (public API)
+    // Change this to your specific domain if you want to restrict access
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type');
     header('Access-Control-Max-Age: 86400');
@@ -163,7 +164,7 @@ function checkRateLimit($action, $identifier) {
 
 // Get client IP
 function getClientIp() {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
     // Sanitize IP
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }

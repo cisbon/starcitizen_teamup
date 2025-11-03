@@ -36,7 +36,7 @@ try {
     }
 
     // Validate group ID
-    $groupId = $input['group_id'] ?? '';
+    $groupId = isset($input['group_id']) ? $input['group_id'] : '';
     if (!validateUuid($groupId)) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid group ID']);
@@ -44,7 +44,7 @@ try {
     }
 
     // Validate player handle
-    $playerHandle = validateHandle($input['player_handle'] ?? '');
+    $playerHandle = validateHandle(isset($input['player_handle']) ? $input['player_handle'] : '');
     if ($playerHandle === false) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.']);
