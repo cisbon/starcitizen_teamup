@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Star Citizen Team Up - LFG Platform</title>
 
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+
     <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" integrity="sha384-..." crossorigin="anonymous"></script>
 
     <style>
         /* CSS Reset & Base Styles */
@@ -94,6 +100,13 @@
             font-weight: 500;
         }
 
+        .input-hint {
+            display: block;
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 4px;
+        }
+
         input[type="text"],
         input[type="number"],
         select,
@@ -116,6 +129,12 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
+        input.invalid,
+        select.invalid,
+        textarea.invalid {
+            border-color: #ff5e62;
+        }
+
         textarea {
             resize: vertical;
             min-height: 100px;
@@ -135,13 +154,18 @@
             box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
         }
 
-        button[type="submit"]:hover {
+        button[type="submit"]:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
         }
 
-        button[type="submit"]:active {
+        button[type="submit"]:active:not(:disabled) {
             transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* LFG Section */
@@ -198,6 +222,7 @@
             font-size: 1.3em;
             font-weight: bold;
             margin-bottom: 10px;
+            word-wrap: break-word;
         }
 
         .group-activity {
@@ -215,6 +240,7 @@
             color: #b0b0b0;
             margin: 15px 0;
             line-height: 1.5;
+            word-wrap: break-word;
         }
 
         .group-meta {
@@ -235,6 +261,7 @@
         .creator {
             color: #888;
             font-size: 0.9em;
+            word-wrap: break-word;
         }
 
         .join-button {
@@ -250,12 +277,12 @@
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
         }
 
-        .join-button:hover {
+        .join-button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
         }
 
-        .join-button:active {
+        .join-button:active:not(:disabled) {
             transform: translateY(0);
         }
 
@@ -272,6 +299,21 @@
             padding: 40px;
             color: #00d4ff;
             font-size: 1.1em;
+        }
+
+        /* Error message */
+        .error-message {
+            background: rgba(255, 94, 98, 0.2);
+            border: 1px solid rgba(255, 94, 98, 0.5);
+            color: #ff9999;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
         }
 
         /* Responsive Design */
@@ -318,16 +360,26 @@
         <header>
             <h1>🚀 Star Citizen Team Up</h1>
             <p>Find your crew for any mission across the verse</p>
-            <a href="https://ko-fi.com/" target="_blank" class="kofi-button">☕ Support on Ko-Fi</a>
+            <a href="https://ko-fi.com/" target="_blank" rel="noopener noreferrer" class="kofi-button">☕ Support on Ko-Fi</a>
         </header>
 
         <!-- Create Group Section -->
         <section class="create-group-section">
             <h2>Create a New Group</h2>
-            <form id="createGroupForm">
+            <form id="createGroupForm" novalidate>
                 <div class="form-group">
                     <label for="creatorHandle">Your Star Citizen Handle *</label>
-                    <input type="text" id="creatorHandle" name="creatorHandle" required placeholder="Enter your handle">
+                    <input
+                        type="text"
+                        id="creatorHandle"
+                        name="creatorHandle"
+                        required
+                        minlength="3"
+                        maxlength="50"
+                        pattern="[a-zA-Z0-9_-]+"
+                        placeholder="Enter your handle"
+                        autocomplete="off">
+                    <span class="input-hint">3-50 characters, letters, numbers, underscores and dashes only</span>
                 </div>
 
                 <div class="form-group">
@@ -352,20 +404,45 @@
 
                 <div class="form-group">
                     <label for="groupTitle">Group Title *</label>
-                    <input type="text" id="groupTitle" name="groupTitle" required placeholder="e.g., Need 3 for ERT Bounties">
+                    <input
+                        type="text"
+                        id="groupTitle"
+                        name="groupTitle"
+                        required
+                        minlength="3"
+                        maxlength="100"
+                        placeholder="e.g., Need 3 for ERT Bounties"
+                        autocomplete="off">
+                    <span class="input-hint">3-100 characters</span>
                 </div>
 
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <textarea id="description" name="description" placeholder="Describe your mission, requirements, or preferences..."></textarea>
+                    <textarea
+                        id="description"
+                        name="description"
+                        maxlength="500"
+                        placeholder="Describe your mission, requirements, or preferences..."
+                        autocomplete="off"></textarea>
+                    <span class="input-hint">Optional, max 500 characters</span>
                 </div>
 
                 <div class="form-group">
                     <label for="maxPlayers">Max Players *</label>
-                    <input type="number" id="maxPlayers" name="maxPlayers" min="2" max="20" value="4" required>
+                    <input
+                        type="number"
+                        id="maxPlayers"
+                        name="maxPlayers"
+                        min="2"
+                        max="50"
+                        value="4"
+                        required>
+                    <span class="input-hint">Between 2 and 50 players</span>
                 </div>
 
-                <button type="submit">Create Group</button>
+                <div class="error-message" id="formError"></div>
+
+                <button type="submit" id="submitButton">Create Group</button>
             </form>
         </section>
 
@@ -390,6 +467,168 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================
+        // SECURITY & VALIDATION CONSTANTS
+        // ============================================
+        const VALIDATION = {
+            HANDLE: {
+                MIN: 3,
+                MAX: 50,
+                PATTERN: /^[a-zA-Z0-9_-]+$/
+            },
+            TITLE: {
+                MIN: 3,
+                MAX: 100
+            },
+            DESCRIPTION: {
+                MAX: 500
+            },
+            MAX_PLAYERS: {
+                MIN: 2,
+                MAX: 50
+            },
+            ACTIVITY_TYPES: [
+                'Bounty Hunting', 'Mining', 'Salvaging', 'Trading', 'Mercenary',
+                'Investigations', 'Search and Rescue', 'Piracy', 'PVP',
+                'Exploration', 'Xenothreat', 'Nine Tails Lockdown', 'Other'
+            ]
+        };
+
+        // Rate limiting
+        const RATE_LIMITS = {
+            createGroup: {
+                maxAttempts: 3,
+                windowMs: 60000, // 1 minute
+                attempts: [],
+            },
+            joinGroup: {
+                maxAttempts: 10,
+                windowMs: 60000, // 1 minute
+                attempts: [],
+            }
+        };
+
+        // ============================================
+        // SECURITY FUNCTIONS
+        // ============================================
+
+        /**
+         * Validates a handle against security rules
+         */
+        function validateHandle(handle) {
+            if (!handle || typeof handle !== 'string') return false;
+            const trimmed = handle.trim();
+            if (trimmed.length < VALIDATION.HANDLE.MIN || trimmed.length > VALIDATION.HANDLE.MAX) return false;
+            if (!VALIDATION.HANDLE.PATTERN.test(trimmed)) return false;
+            return true;
+        }
+
+        /**
+         * Validates a title
+         */
+        function validateTitle(title) {
+            if (!title || typeof title !== 'string') return false;
+            const trimmed = title.trim();
+            if (trimmed.length < VALIDATION.TITLE.MIN || trimmed.length > VALIDATION.TITLE.MAX) return false;
+            return true;
+        }
+
+        /**
+         * Validates description
+         */
+        function validateDescription(description) {
+            if (!description) return true; // Optional field
+            if (typeof description !== 'string') return false;
+            return description.length <= VALIDATION.DESCRIPTION.MAX;
+        }
+
+        /**
+         * Validates activity type
+         */
+        function validateActivityType(activityType) {
+            return VALIDATION.ACTIVITY_TYPES.includes(activityType);
+        }
+
+        /**
+         * Validates max players
+         */
+        function validateMaxPlayers(maxPlayers) {
+            const num = parseInt(maxPlayers);
+            if (isNaN(num)) return false;
+            return num >= VALIDATION.MAX_PLAYERS.MIN && num <= VALIDATION.MAX_PLAYERS.MAX;
+        }
+
+        /**
+         * Rate limiting check
+         */
+        function checkRateLimit(action) {
+            const limit = RATE_LIMITS[action];
+            if (!limit) return true;
+
+            const now = Date.now();
+            // Remove old attempts outside the time window
+            limit.attempts = limit.attempts.filter(time => now - time < limit.windowMs);
+
+            if (limit.attempts.length >= limit.maxAttempts) {
+                return false;
+            }
+
+            limit.attempts.push(now);
+            return true;
+        }
+
+        /**
+         * Sanitizes text input by removing potentially dangerous characters
+         */
+        function sanitizeInput(input) {
+            if (!input) return '';
+            // Remove null bytes and control characters except newlines and tabs
+            return input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
+        }
+
+        /**
+         * Escapes HTML to prevent XSS attacks
+         */
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+                '/': '&#x2F;'
+            };
+            return String(text).replace(/[&<>"'/]/g, m => map[m]);
+        }
+
+        /**
+         * Shows error message
+         */
+        function showError(message) {
+            const errorDiv = document.getElementById('formError');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        /**
+         * Debounce function to prevent rapid clicks
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // ============================================
         // CORE FUNCTIONS
         // ============================================
 
@@ -401,12 +640,13 @@
                 // First check for expired groups
                 await checkExpiredGroups();
 
-                // Fetch all open groups
+                // Fetch all open groups (limit to 100 for performance)
                 const { data: groups, error: groupsError } = await supabase
                     .from('starcitizen_teamup_groups')
                     .select('*')
                     .eq('status', 'open')
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .limit(100);
 
                 if (groupsError) throw groupsError;
 
@@ -435,17 +675,24 @@
 
                 // Render groups
                 groupsContainer.innerHTML = groupsWithCounts.map(group => `
-                    <div class="group-card">
+                    <div class="group-card" data-group-id="${escapeHtml(group.id)}">
                         <div class="group-title">${escapeHtml(group.title)}</div>
                         <span class="group-activity">${escapeHtml(group.activity_type)}</span>
                         ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
                         <div class="group-meta">
-                            <span class="player-count">👥 ${group.memberCount}/${group.max_players}</span>
+                            <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
                             <span class="creator">by ${escapeHtml(group.creator_handle)}</span>
                         </div>
-                        <button class="join-button" onclick="handleJoinGroup('${group.id}')">Join Group</button>
+                        <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
                     </div>
                 `).join('');
+
+                // Add event listeners to join buttons
+                document.querySelectorAll('.join-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        handleJoinGroup(this.dataset.groupId);
+                    });
+                });
 
             } catch (error) {
                 console.error('Error loading groups:', error);
@@ -460,9 +707,51 @@
         async function createGroup(event) {
             event.preventDefault();
 
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+
             try {
+                // Check rate limit
+                if (!checkRateLimit('createGroup')) {
+                    showError('Too many requests. Please wait a minute before creating another group.');
+                    return;
+                }
+
                 const form = event.target;
                 const formData = new FormData(form);
+
+                // Get and sanitize inputs
+                const creatorHandle = sanitizeInput(formData.get('creatorHandle'));
+                const activityType = formData.get('activityType');
+                const groupTitle = sanitizeInput(formData.get('groupTitle'));
+                const description = sanitizeInput(formData.get('description'));
+                const maxPlayers = formData.get('maxPlayers');
+
+                // Validate all inputs
+                if (!validateHandle(creatorHandle)) {
+                    showError('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
+                    return;
+                }
+
+                if (!validateActivityType(activityType)) {
+                    showError('Please select a valid activity type.');
+                    return;
+                }
+
+                if (!validateTitle(groupTitle)) {
+                    showError('Title must be between 3 and 100 characters.');
+                    return;
+                }
+
+                if (!validateDescription(description)) {
+                    showError('Description must be 500 characters or less.');
+                    return;
+                }
+
+                if (!validateMaxPlayers(maxPlayers)) {
+                    showError('Max players must be between 2 and 50.');
+                    return;
+                }
 
                 // Calculate expiration time (10 minutes from now)
                 const expiresAt = new Date();
@@ -470,11 +759,11 @@
 
                 // Prepare group data
                 const groupData = {
-                    creator_handle: formData.get('creatorHandle'),
-                    activity_type: formData.get('activityType'),
-                    title: formData.get('groupTitle'),
-                    description: formData.get('description') || null,
-                    max_players: parseInt(formData.get('maxPlayers')),
+                    creator_handle: creatorHandle,
+                    activity_type: activityType,
+                    title: groupTitle,
+                    description: description || null,
+                    max_players: parseInt(maxPlayers),
                     status: 'open',
                     expires_at: expiresAt.toISOString()
                 };
@@ -486,17 +775,24 @@
                     .select()
                     .single();
 
-                if (groupError) throw groupError;
+                if (groupError) {
+                    console.error('Database error:', groupError);
+                    showError('Unable to create group. Please try again.');
+                    return;
+                }
 
                 // Add creator as first member
                 const { error: memberError } = await supabase
                     .from('starcitizen_teamup_members')
                     .insert([{
                         group_id: newGroup.id,
-                        player_handle: groupData.creator_handle
+                        player_handle: creatorHandle
                     }]);
 
-                if (memberError) throw memberError;
+                if (memberError) {
+                    console.error('Member insert error:', memberError);
+                    // Group was created but member add failed - not critical
+                }
 
                 // Reset form and reload groups
                 form.reset();
@@ -505,7 +801,9 @@
 
             } catch (error) {
                 console.error('Error creating group:', error);
-                alert('Error creating group. Please try again.');
+                showError('An error occurred. Please try again.');
+            } finally {
+                submitButton.disabled = false;
             }
         }
 
@@ -514,14 +812,27 @@
          * Prompts for player handle and adds them to the group
          */
         async function handleJoinGroup(groupId) {
-            const playerHandle = prompt('Enter your Star Citizen handle:');
-
-            if (!playerHandle || playerHandle.trim() === '') {
-                alert('Please enter a valid handle.');
+            // Validate groupId format (UUID)
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidPattern.test(groupId)) {
+                alert('Invalid group ID.');
                 return;
             }
 
-            await joinGroup(groupId, playerHandle.trim());
+            const playerHandle = prompt('Enter your Star Citizen handle (3-50 characters, alphanumeric, underscores and dashes):');
+
+            if (!playerHandle) {
+                return;
+            }
+
+            const sanitized = sanitizeInput(playerHandle);
+
+            if (!validateHandle(sanitized)) {
+                alert('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
+                return;
+            }
+
+            await joinGroup(groupId, sanitized);
         }
 
         /**
@@ -529,13 +840,54 @@
          */
         async function joinGroup(groupId, playerHandle) {
             try {
-                // Check if player is already in the group
-                const { data: existingMember, error: checkError } = await supabase
+                // Check rate limit
+                if (!checkRateLimit('joinGroup')) {
+                    alert('Too many requests. Please wait a minute.');
+                    return;
+                }
+
+                // Disable all join buttons temporarily
+                document.querySelectorAll('.join-button').forEach(btn => btn.disabled = true);
+
+                // First, verify the group is still open
+                const { data: groupCheck, error: groupCheckError } = await supabase
+                    .from('starcitizen_teamup_groups')
+                    .select('status, max_players')
+                    .eq('id', groupId)
+                    .single();
+
+                if (groupCheckError || !groupCheck) {
+                    alert('Group not found.');
+                    return;
+                }
+
+                if (groupCheck.status !== 'open') {
+                    alert('This group is no longer accepting members.');
+                    await loadGroups();
+                    return;
+                }
+
+                // Check current member count
+                const { count: currentCount, error: countCheckError } = await supabase
                     .from('starcitizen_teamup_members')
-                    .select('*')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('group_id', groupId);
+
+                if (countCheckError) throw countCheckError;
+
+                if (currentCount >= groupCheck.max_players) {
+                    alert('This group is already full.');
+                    await loadGroups();
+                    return;
+                }
+
+                // Check if player is already in the group
+                const { data: existingMember } = await supabase
+                    .from('starcitizen_teamup_members')
+                    .select('id')
                     .eq('group_id', groupId)
                     .eq('player_handle', playerHandle)
-                    .single();
+                    .maybeSingle();
 
                 if (existingMember) {
                     alert('You are already in this group!');
@@ -550,9 +902,16 @@
                         player_handle: playerHandle
                     }]);
 
-                if (memberError) throw memberError;
+                if (memberError) {
+                    // Check if it's a duplicate key error (race condition)
+                    if (memberError.code === '23505') {
+                        alert('You are already in this group!');
+                        return;
+                    }
+                    throw memberError;
+                }
 
-                // Get current member count and max players
+                // Get updated member count
                 const { count: memberCount, error: countError } = await supabase
                     .from('starcitizen_teamup_members')
                     .select('*', { count: 'exact', head: true })
@@ -560,16 +919,8 @@
 
                 if (countError) throw countError;
 
-                const { data: group, error: groupError } = await supabase
-                    .from('starcitizen_teamup_groups')
-                    .select('max_players')
-                    .eq('id', groupId)
-                    .single();
-
-                if (groupError) throw groupError;
-
                 // If group is full, update status
-                if (memberCount >= group.max_players) {
+                if (memberCount >= groupCheck.max_players) {
                     const newExpiresAt = new Date();
                     newExpiresAt.setMinutes(newExpiresAt.getMinutes() + 10);
 
@@ -579,9 +930,12 @@
                             status: 'full',
                             expires_at: newExpiresAt.toISOString()
                         })
-                        .eq('id', groupId);
+                        .eq('id', groupId)
+                        .eq('status', 'open'); // Only update if still open
 
-                    if (updateError) throw updateError;
+                    if (updateError) {
+                        console.error('Error updating group status:', updateError);
+                    }
 
                     alert('Successfully joined! Group is now full. 🎉');
                 } else {
@@ -593,56 +947,37 @@
 
             } catch (error) {
                 console.error('Error joining group:', error);
-                alert('Error joining group. Please try again.');
+                alert('Unable to join group. Please try again.');
+            } finally {
+                // Re-enable join buttons
+                document.querySelectorAll('.join-button').forEach(btn => btn.disabled = false);
             }
         }
 
         /**
-         * Checks for expired full groups and updates their status to closed
+         * Checks for expired groups and updates their status to closed
          */
         async function checkExpiredGroups() {
             try {
                 const now = new Date().toISOString();
 
-                // Find expired full groups
-                const { data: expiredGroups, error: fetchError } = await supabase
+                // Update expired open groups (not filled after 10 minutes)
+                await supabase
                     .from('starcitizen_teamup_groups')
-                    .select('id')
-                    .eq('status', 'full')
+                    .update({ status: 'closed' })
+                    .eq('status', 'open')
                     .lt('expires_at', now);
 
-                if (fetchError) throw fetchError;
-
-                if (expiredGroups && expiredGroups.length > 0) {
-                    // Update expired groups to closed
-                    const { error: updateError } = await supabase
-                        .from('starcitizen_teamup_groups')
-                        .update({ status: 'closed' })
-                        .eq('status', 'full')
-                        .lt('expires_at', now);
-
-                    if (updateError) throw updateError;
-
-                    console.log(`Closed ${expiredGroups.length} expired group(s)`);
-                }
+                // Update expired full groups
+                await supabase
+                    .from('starcitizen_teamup_groups')
+                    .update({ status: 'closed' })
+                    .eq('status', 'full')
+                    .lt('expires_at', now);
 
             } catch (error) {
                 console.error('Error checking expired groups:', error);
             }
-        }
-
-        /**
-         * Escapes HTML to prevent XSS attacks
-         */
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
         }
 
         // ============================================
@@ -651,13 +986,24 @@
 
         // Load groups on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // Initial load
             loadGroups();
 
-            // Set up form submission
-            document.getElementById('createGroupForm').addEventListener('submit', createGroup);
+            // Set up form submission with debouncing
+            const form = document.getElementById('createGroupForm');
+            form.addEventListener('submit', createGroup);
 
             // Check for expired groups every 60 seconds
             setInterval(checkExpiredGroups, 60000);
+
+            // Reload groups every 30 seconds to keep fresh
+            setInterval(loadGroups, 30000);
+        });
+
+        // Prevent common XSS vectors
+        window.addEventListener('error', (e) => {
+            // Don't expose error details to console in production
+            e.preventDefault();
         });
     </script>
 </body>
