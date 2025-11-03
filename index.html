@@ -841,6 +841,134 @@
             text-decoration: underline;
         }
 
+        /* Custom Input Modal */
+        .input-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .input-modal.show {
+            display: flex;
+        }
+
+        .input-modal-content {
+            background: linear-gradient(135deg, rgba(15, 44, 62, 0.98) 0%, rgba(10, 31, 46, 0.98) 100%);
+            border: 2px solid #add3eb;
+            border-radius: 0;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
+        }
+
+        .input-modal-header {
+            color: #add3eb;
+            font-size: 1.3em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2a4a5e;
+        }
+
+        .input-modal-body {
+            margin-bottom: 20px;
+        }
+
+        .input-modal-body label {
+            display: block;
+            color: #add3eb;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-modal-body input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(15, 44, 62, 0.6);
+            border: 1px solid #2a4a5e;
+            border-radius: 0;
+            color: #e0e0e0;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-modal-body input:focus {
+            outline: none;
+            border-color: #add3eb;
+            background: rgba(15, 44, 62, 0.8);
+            box-shadow: 0 0 10px rgba(173, 211, 235, 0.2);
+        }
+
+        .input-modal-hint {
+            display: block;
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .input-modal-error {
+            color: #ff6464;
+            font-size: 0.85em;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .input-modal-error.show {
+            display: block;
+        }
+
+        .input-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .input-modal-btn {
+            padding: 12px 24px;
+            border: 1px solid #add3eb;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+
+        .input-modal-btn.primary {
+            background: linear-gradient(135deg, #add3eb 0%, #8ab3d1 100%);
+            color: #0f2c3e;
+        }
+
+        .input-modal-btn.primary:hover {
+            background: linear-gradient(135deg, #cce5f2 0%, #add3eb 100%);
+            box-shadow: 0 0 15px rgba(173, 211, 235, 0.5);
+        }
+
+        .input-modal-btn.secondary {
+            background: rgba(173, 211, 235, 0.2);
+            color: #add3eb;
+        }
+
+        .input-modal-btn.secondary:hover {
+            background: rgba(173, 211, 235, 0.4);
+        }
+
         /* Imprint Popup */
         .popup-overlay {
             display: none;
@@ -1128,6 +1256,31 @@
         </footer>
     </div>
 
+    <!-- Custom Input Modal -->
+    <div class="input-modal" id="handleInputModal">
+        <div class="input-modal-content">
+            <div class="input-modal-header" id="inputModalTitle">
+                Enter Your Star Citizen Handle
+            </div>
+            <div class="input-modal-body">
+                <label for="handleInput">Handle *</label>
+                <input
+                    type="text"
+                    id="handleInput"
+                    placeholder="Enter your handle"
+                    minlength="3"
+                    maxlength="50"
+                    autocomplete="off">
+                <span class="input-modal-hint">3-50 characters, letters, numbers, underscores and dashes only</span>
+                <div class="input-modal-error" id="handleInputError"></div>
+            </div>
+            <div class="input-modal-actions">
+                <button class="input-modal-btn secondary" onclick="closeHandleInputModal(false)">Cancel</button>
+                <button class="input-modal-btn primary" onclick="submitHandleInput()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Imprint Popup -->
     <div class="popup-overlay" id="imprintPopup" onclick="if(event.target===this) this.classList.remove('show');">
         <div class="popup-content">
@@ -1340,6 +1493,85 @@
         }
 
         // ============================================
+        // CUSTOM INPUT MODAL FUNCTIONS
+        // ============================================
+
+        let handleInputResolve = null;
+        let handleInputReject = null;
+
+        function showHandleInputModal(title = 'Enter Your Star Citizen Handle') {
+            return new Promise((resolve, reject) => {
+                handleInputResolve = resolve;
+                handleInputReject = reject;
+
+                const modal = document.getElementById('handleInputModal');
+                const titleEl = document.getElementById('inputModalTitle');
+                const input = document.getElementById('handleInput');
+                const error = document.getElementById('handleInputError');
+
+                titleEl.textContent = title;
+                input.value = '';
+                error.classList.remove('show');
+                error.textContent = '';
+
+                modal.classList.add('show');
+
+                // Focus input after modal is shown
+                setTimeout(() => input.focus(), 100);
+
+                // Handle Enter key
+                input.onkeypress = function(e) {
+                    if (e.key === 'Enter') {
+                        submitHandleInput();
+                    }
+                };
+
+                // Handle Escape key
+                modal.onkeydown = function(e) {
+                    if (e.key === 'Escape') {
+                        closeHandleInputModal(false);
+                    }
+                };
+            });
+        }
+
+        function submitHandleInput() {
+            const input = document.getElementById('handleInput');
+            const error = document.getElementById('handleInputError');
+            const sanitized = sanitizeInput(input.value);
+
+            if (!validateHandle(sanitized)) {
+                error.textContent = 'Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.';
+                error.classList.add('show');
+                return;
+            }
+
+            closeHandleInputModal(sanitized);
+        }
+
+        function closeHandleInputModal(value) {
+            const modal = document.getElementById('handleInputModal');
+            const error = document.getElementById('handleInputError');
+
+            modal.classList.remove('show');
+            error.classList.remove('show');
+
+            if (value === false || value === null) {
+                if (handleInputReject) {
+                    handleInputReject('User cancelled');
+                    handleInputReject = null;
+                    handleInputResolve = null;
+                }
+            } else {
+                if (handleInputResolve) {
+                    handleInputResolve(value);
+                    handleInputResolve = null;
+                    handleInputReject = null;
+                }
+            }
+        }
+
+        // ============================================
         // TIMER FUNCTIONS
         // ============================================
 
@@ -1387,12 +1619,23 @@
                 return;
             }
 
+            // Get user's groups to check if they already created or joined
+            const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+            const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+            const myGroupIds = myGroups.map(g => g.id);
+            const joinedGroupIds = joinedGroups.map(g => g.id);
+
             groupsContainer.innerHTML = groups.map(group => {
                 const timer = formatTimeRemaining(group.expires_at);
                 const isFull = parseInt(group.memberCount) >= parseInt(group.max_players);
                 const timerTooltip = isFull
                     ? 'Full groups are automatically removed after 10 minutes'
                     : 'Groups are automatically removed after 2 hours of inactivity';
+
+                // Check if user created or joined this group
+                const isMyGroup = myGroupIds.includes(group.id);
+                const isJoinedGroup = joinedGroupIds.includes(group.id);
+                const alreadyInGroup = isMyGroup || isJoinedGroup;
 
                 return `
                 <div class="group-card" data-group-id="${escapeHtml(group.id)}">
@@ -1407,7 +1650,12 @@
                     <div class="group-timer ${timer.class}" title="${timerTooltip}">
                         ⏱️ ${timer.text}
                     </div>
-                    <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
+                    ${alreadyInGroup
+                        ? `<div style="padding: 12px; text-align: center; color: #add3eb; font-weight: bold; border: 1px solid #add3eb; background: rgba(173, 211, 235, 0.1);">
+                            ${isMyGroup ? '✓ Your Group' : '✓ Already Joined'}
+                           </div>`
+                        : `<button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>`
+                    }
                 </div>
                 `;
             }).join('');
@@ -1568,20 +1816,13 @@
                 return;
             }
 
-            const playerHandle = prompt('Enter your Star Citizen handle (3-50 characters, alphanumeric, underscores and dashes):');
-
-            if (!playerHandle) {
-                return;
+            try {
+                const playerHandle = await showHandleInputModal('Join Group - Enter Your Handle');
+                await joinGroup(groupId, playerHandle);
+            } catch (error) {
+                // User cancelled
+                console.log('User cancelled join');
             }
-
-            const sanitized = sanitizeInput(playerHandle);
-
-            if (!validateHandle(sanitized)) {
-                alert('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
-                return;
-            }
-
-            await joinGroup(groupId, sanitized);
         }
 
         async function joinGroup(groupId, playerHandle) {
@@ -2150,12 +2391,42 @@
                     return `<div class="my-group-card">
                         <div class="my-group-header">
                             <div class="my-group-title">${escapeHtml(group.title)} (Error loading)</div>
-                            <button class="leave-group-btn" onclick="removeJoinedGroup('${escapeHtml(group.id)}')">Remove</button>
                         </div>
+                        <p style="color: #999; padding: 10px;">This group may have been deleted. <a href="#" onclick="removeJoinedGroup('${escapeHtml(group.id)}'); return false;" style="color: #add3eb; text-decoration: underline;">Click here to remove from list</a></p>
                     </div>`;
                 }
 
                 const members = memberData.members || [];
+                const memberCount = members.length;
+
+                // Track member changes for notifications (similar to My Groups)
+                const previousCount = lastMemberCounts[`joined_${group.id}`] || memberCount;
+                const previousMembers = lastMemberCounts[`joined_${group.id}_members`] || [];
+                const currentMemberHandles = members.map(m => m.player_handle);
+                const previousMemberHandles = previousMembers.map(m => m.player_handle);
+
+                // Detect new members
+                if (memberCount > previousCount && previousCount > 0) {
+                    const newMemberHandles = currentMemberHandles.filter(h => !previousMemberHandles.includes(h));
+                    newMemberHandles.forEach(handle => {
+                        addNotification(group.id, 'joined', `${handle} joined the group`);
+                        showNotification(
+                            '🎉 New Member Joined!',
+                            `${handle} joined the group: ${group.title}`
+                        );
+                    });
+                }
+
+                // Detect members who left
+                if (previousCount > 0 && memberCount < previousCount) {
+                    const leftMemberHandles = previousMemberHandles.filter(h => !currentMemberHandles.includes(h));
+                    leftMemberHandles.forEach(handle => {
+                        addNotification(group.id, 'left', `${handle} left the group`);
+                    });
+                }
+
+                lastMemberCounts[`joined_${group.id}`] = memberCount;
+                lastMemberCounts[`joined_${group.id}_members`] = members;
 
                 return `
                     <div class="my-group-card">
@@ -2176,15 +2447,36 @@
                         </div>
                         <div class="members-list">
                             <div class="members-title">Members (${members.length}):</div>
-                            ${members.length > 0 ? members.map(member =>
-                                `<div class="member-item">
+                            ${members.length > 0 ? members.map(member => {
+                                const isLeader = member.player_handle === memberData.group.creator_handle;
+                                const isMe = member.player_handle === group.my_handle;
+                                const isNew = currentMemberHandles.includes(member.player_handle) && !previousMemberHandles.includes(member.player_handle);
+                                return `<div class="member-item">
                                     <span class="member-handle">
+                                        ${isLeader ? '<span style="font-size: 1.1em;">👑</span> ' : ''}
                                         <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
+                                        ${isMe ? ' <span style="color: #6bb6ff; font-weight: bold;">(You)</span>' : ''}
+                                        ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}
                                     </span>
                                     <span class="member-joined">Joined: ${new Date(member.joined_at).toLocaleTimeString()}</span>
-                                </div>`
-                            ).join('') : '<div class="no-members">No members yet</div>'}
+                                </div>`;
+                            }).join('') : '<div class="no-members">No members yet</div>'}
                         </div>
+                        ${(() => {
+                            const notifications = getGroupNotifications(group.id);
+                            if (notifications.length > 0) {
+                                return `<div class="notification-history">
+                                    <div class="notification-history-title">Recent Activity (Last 10):</div>
+                                    ${notifications.slice(0, 10).map(notif =>
+                                        `<div class="notification-item ${notif.type}">
+                                            ${escapeHtml(notif.message)}
+                                            <span class="notification-time">${new Date(notif.timestamp).toLocaleTimeString()}</span>
+                                        </div>`
+                                    ).join('')}
+                                </div>`;
+                            }
+                            return '';
+                        })()}
                     </div>
                 `;
             }));
