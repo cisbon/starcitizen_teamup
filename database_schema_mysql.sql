@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `starcitizen_teamup_groups` (
   `title` VARCHAR(100) NOT NULL,
   `description` TEXT,
   `ship` VARCHAR(50),
+  `discord_invite` VARCHAR(255),
   `max_players` INT NOT NULL,
   `status` ENUM('open', 'full', 'closed') NOT NULL DEFAULT 'open',
   `expires_at` DATETIME NOT NULL,
@@ -63,6 +64,9 @@ CREATE TABLE IF NOT EXISTS `starcitizen_teamup_groups` (
   ),
   CONSTRAINT `chk_ship` CHECK (
     ship IS NULL OR (CHAR_LENGTH(ship) >= 2 AND CHAR_LENGTH(ship) <= 50)
+  ),
+  CONSTRAINT `chk_discord_invite` CHECK (
+    discord_invite IS NULL OR CHAR_LENGTH(discord_invite) <= 255
   ),
   CONSTRAINT `chk_max_players` CHECK (
     max_players >= 2 AND max_players <= 50

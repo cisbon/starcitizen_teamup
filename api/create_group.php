@@ -71,6 +71,17 @@ try {
         exit;
     }
 
+    // Validate Discord invite (optional)
+    $discordInvite = isset($input['discord_invite']) ? trim($input['discord_invite']) : '';
+    if ($discordInvite !== '' && strlen($discordInvite) > 255) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Discord invite link must be 255 characters or less.']);
+        exit;
+    }
+    if ($discordInvite === '') {
+        $discordInvite = null;
+    }
+
     $maxPlayers = validateMaxPlayers(isset($input['max_players']) ? $input['max_players'] : 0);
     if ($maxPlayers === false) {
         http_response_code(400);
@@ -81,33 +92,23 @@ try {
     $pdo = getDbConnection();
 
     // Check 2-group limit (server-side validation)
-    // Count groups created by this handle
+    // Count ALL active groups where player is involved (either as creator or member)
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count
-        FROM starcitizen_teamup_groups
-        WHERE creator_handle = ?
-        AND status IN ('open', 'full')
-    ");
-    $stmt->execute([$creatorHandle]);
-    $createdCount = $stmt->fetch()['count'];
-
-    // Count groups joined by this handle (as member, not creator)
-    $stmt = $pdo->prepare("
-        SELECT COUNT(DISTINCT m.group_id) as count
-        FROM starcitizen_teamup_members m
-        INNER JOIN starcitizen_teamup_groups g ON m.group_id = g.id
-        WHERE m.player_handle = ?
-        AND g.creator_handle != ?
-        AND g.status IN ('open', 'full')
+        SELECT COUNT(DISTINCT g.id) as count
+        FROM starcitizen_teamup_groups g
+        LEFT JOIN starcitizen_teamup_members m ON g.id = m.group_id
+        WHERE g.status IN ('open', 'full')
+        AND (g.creator_handle = ? OR m.player_handle = ?)
     ");
     $stmt->execute([$creatorHandle, $creatorHandle]);
-    $joinedCount = $stmt->fetch()['count'];
-
-    $totalGroups = $createdCount + $joinedCount;
+    $totalGroups = $stmt->fetch()['count'];
 
     if ($totalGroups >= 2) {
         http_response_code(400);
-        echo json_encode(['error' => 'You can only be part of 2 groups maximum (created or joined). Please leave a group first.']);
+        echo json_encode([
+            'error' => 'You can only be part of 2 groups maximum (created or joined). Please leave a group first.',
+            'debug' => ['total_groups' => $totalGroups, 'handle' => $creatorHandle]
+        ]);
         exit;
     }
 
@@ -118,8 +119,8 @@ try {
 
     $stmt = $pdo->prepare("
         INSERT INTO starcitizen_teamup_groups
-        (id, creator_handle, activity_type, title, description, ship, max_players, status, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?)
+        (id, creator_handle, activity_type, title, description, ship, discord_invite, max_players, status, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
     ");
 
     $stmt->execute([
@@ -129,6 +130,7 @@ try {
         $title,
         $description,
         $ship,
+        $discordInvite,
         $maxPlayers,
         $expiresAt
     ]);

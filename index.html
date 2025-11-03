@@ -2808,14 +2808,14 @@
             updateMemberRatings();
         }
 
-        // Start polling for new members (every 10 seconds)
+        // Start polling for new members (every 30 seconds)
         function startPolling() {
             if (pollingInterval) clearInterval(pollingInterval);
             pollingInterval = setInterval(() => {
                 renderMyGroups();
                 renderJoinedGroups();
                 checkForRemovals(); // Check if removed from any joined groups
-            }, 10000); // Poll every 10 seconds
+            }, 30000); // Poll every 30 seconds
         }
 
         // ============================================

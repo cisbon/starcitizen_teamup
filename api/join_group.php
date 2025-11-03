@@ -112,34 +112,24 @@ try {
         }
 
         // Check 2-group limit (server-side validation)
-        // Count groups created by this handle
+        // Count ALL active groups where player is involved (either as creator or member)
         $stmt = $pdo->prepare("
-            SELECT COUNT(*) as count
-            FROM starcitizen_teamup_groups
-            WHERE creator_handle = ?
-            AND status IN ('open', 'full')
-        ");
-        $stmt->execute([$playerHandle]);
-        $createdCount = $stmt->fetch()['count'];
-
-        // Count groups joined by this handle (as member, not creator)
-        $stmt = $pdo->prepare("
-            SELECT COUNT(DISTINCT m.group_id) as count
-            FROM starcitizen_teamup_members m
-            INNER JOIN starcitizen_teamup_groups g ON m.group_id = g.id
-            WHERE m.player_handle = ?
-            AND g.creator_handle != ?
-            AND g.status IN ('open', 'full')
+            SELECT COUNT(DISTINCT g.id) as count
+            FROM starcitizen_teamup_groups g
+            LEFT JOIN starcitizen_teamup_members m ON g.id = m.group_id
+            WHERE g.status IN ('open', 'full')
+            AND (g.creator_handle = ? OR m.player_handle = ?)
         ");
         $stmt->execute([$playerHandle, $playerHandle]);
-        $joinedCount = $stmt->fetch()['count'];
-
-        $totalGroups = $createdCount + $joinedCount;
+        $totalGroups = $stmt->fetch()['count'];
 
         if ($totalGroups >= 2) {
             $pdo->rollBack();
             http_response_code(400);
-            echo json_encode(['error' => 'You can only be part of 2 groups maximum (created or joined). Please leave a group first.']);
+            echo json_encode([
+                'error' => 'You can only be part of 2 groups maximum (created or joined). Please leave a group first.',
+                'debug' => ['total_groups' => $totalGroups, 'handle' => $playerHandle]
+            ]);
             exit;
         }
 
