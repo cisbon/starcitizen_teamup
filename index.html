@@ -12,7 +12,7 @@
     <meta http-equiv="X-Frame-Options" content="DENY">
 
     <style>
-        /* CSS Reset & Base Styles - RSI Inspired */
+        /* CSS Reset & Base Styles - Inspired */
         * {
             margin: 0;
             padding: 0;
@@ -37,7 +37,7 @@
             margin: 0 auto;
         }
 
-        /* Header - RSI Style */
+        /* Header - Style */
         header {
             text-align: center;
             padding: 40px 20px;
@@ -116,7 +116,7 @@
             background: linear-gradient(135deg, #8ac7ff 0%, #6bb6ff 100%);
         }
 
-        /* Create Group Section - RSI Style */
+        /* Create Group Section - Style */
         .create-group-section {
             background: linear-gradient(135deg, rgba(15, 44, 62, 0.95) 0%, rgba(10, 31, 46, 0.95) 100%);
             padding: 0;
@@ -252,7 +252,7 @@
             cursor: not-allowed;
         }
 
-        /* LFG Section - RSI Style */
+        /* LFG Section - Style */
         .lfg-section {
             background: linear-gradient(135deg, rgba(15, 44, 62, 0.95) 0%, rgba(10, 31, 46, 0.95) 100%);
             padding: 30px;
@@ -273,7 +273,7 @@
             padding-bottom: 15px;
         }
 
-        /* Filters - RSI Style */
+        /* Filters */
         .filters-container {
             background: rgba(15, 44, 62, 0.5);
             padding: 25px;
@@ -311,6 +311,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-top: 40px;
             cursor: pointer;
             color: #e0e0e0;
             font-size: 0.9em;
@@ -350,7 +351,7 @@
             font-style: italic;
         }
 
-        /* Group Cards - RSI Style */
+        /* Group Cards - Style */
         .groups-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -471,6 +472,11 @@
             font-size: 1.1em;
         }
 
+        .img-community {
+            height: 50px;
+            width: 50px;
+        }
+
         /* Loading State */
         .loading {
             text-align: center;
@@ -542,6 +548,10 @@
 
             .section-header h2 {
                 font-size: 1.2em;
+            }
+
+            .checkbox-label {
+                margin: 0;
             }
         }
 
@@ -1015,6 +1025,7 @@
 
         <!-- Footer -->
         <footer>
+            <img id="community-logo" src="made-by-the-community.webp" alt="Made by the community logo" class="img-community">
             <p>&copy; 2025 Star Citizen Team Up. Not affiliated with Cloud Imperium Games.</p>
             <p><a href="#" onclick="document.getElementById('imprintPopup').classList.add('show'); return false;">Imprint</a></p>
         </footer>
