@@ -733,6 +733,77 @@
             padding: 10px 0;
         }
 
+        .notification-history {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2a4a5e;
+        }
+
+        .notification-history-title {
+            color: #add3eb;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .notification-item {
+            padding: 8px 12px;
+            background: rgba(107, 182, 255, 0.1);
+            border-left: 2px solid #6bb6ff;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            color: #cce5f2;
+        }
+
+        .notification-item.joined {
+            border-left-color: #6bb6ff;
+            background: rgba(107, 182, 255, 0.1);
+        }
+
+        .notification-item.left {
+            border-left-color: #ff6464;
+            background: rgba(255, 100, 100, 0.1);
+        }
+
+        .notification-time {
+            color: #666;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        .delete-group-btn {
+            background: rgba(255, 100, 100, 0.3);
+            border-color: #ff6464;
+            color: #ff6464;
+            padding: 10px 20px;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .delete-group-btn:hover {
+            background: rgba(255, 100, 100, 0.5);
+        }
+
+        .remove-member-btn {
+            padding: 4px 10px;
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid #ff6464;
+            color: #ff6464;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .remove-member-btn:hover {
+            background: rgba(255, 100, 100, 0.4);
+        }
+
         .profile-link {
             color: #add3eb;
             text-decoration: none;
@@ -1501,7 +1572,8 @@
         const STORAGE_KEYS = {
             MY_GROUPS: 'sc_teamup_my_groups',
             JOINED_GROUPS: 'sc_teamup_joined_groups',
-            LAST_MEMBER_COUNTS: 'sc_teamup_member_counts'
+            LAST_MEMBER_COUNTS: 'sc_teamup_member_counts',
+            NOTIFICATIONS: 'sc_teamup_notifications'
         };
 
         // Get data from localStorage
@@ -1570,6 +1642,166 @@
             const filtered = joinedGroups.filter(g => g.id !== groupId);
             setLocalStorage(STORAGE_KEYS.JOINED_GROUPS, filtered);
             renderJoinedGroups();
+        }
+
+        // ============================================
+        // NOTIFICATION MANAGEMENT
+        // ============================================
+
+        // Add notification to history
+        function addNotification(groupId, type, message) {
+            const notifications = getLocalStorage(STORAGE_KEYS.NOTIFICATIONS);
+            notifications.push({
+                group_id: groupId,
+                type: type, // 'joined', 'left', 'removed', 'deleted'
+                message: message,
+                timestamp: new Date().toISOString()
+            });
+            // Keep only last 100 notifications
+            if (notifications.length > 100) {
+                notifications.shift();
+            }
+            setLocalStorage(STORAGE_KEYS.NOTIFICATIONS, notifications);
+        }
+
+        // Get notifications for a specific group
+        function getGroupNotifications(groupId) {
+            const notifications = getLocalStorage(STORAGE_KEYS.NOTIFICATIONS);
+            return notifications.filter(n => n.group_id === groupId).reverse(); // Most recent first
+        }
+
+        // ============================================
+        // API CALLS FOR GROUP MANAGEMENT
+        // ============================================
+
+        // Remove member from group (owner only)
+        async function removeMemberFromGroup(groupId, playerHandle, ownerHandle) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/remove_member.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        player_handle: playerHandle,
+                        requesting_user: ownerHandle
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.error || 'Failed to remove member');
+                    return false;
+                }
+
+                addNotification(groupId, 'left', `${playerHandle} was removed from the group`);
+                showNotification('Member Removed', `${playerHandle} has been removed from your group`);
+                await renderMyGroups();
+                return true;
+            } catch (error) {
+                console.error('Error removing member:', error);
+                alert('Failed to remove member. Please try again.');
+                return false;
+            }
+        }
+
+        // Delete entire group (owner only)
+        async function deleteGroup(groupId, ownerHandle) {
+            if (!confirm('Are you sure you want to delete this group? All members will be notified.')) {
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete_group.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        requesting_user: ownerHandle
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.error || 'Failed to delete group');
+                    return false;
+                }
+
+                removeMyGroup(groupId);
+                showNotification('Group Deleted', `Your group "${data.group_title}" has been deleted`);
+                await loadGroups();
+                return true;
+            } catch (error) {
+                console.error('Error deleting group:', error);
+                alert('Failed to delete group. Please try again.');
+                return false;
+            }
+        }
+
+        // Leave group (member only)
+        async function leaveGroup(groupId, playerHandle) {
+            if (!confirm('Are you sure you want to leave this group?')) {
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/leave_group.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        player_handle: playerHandle
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.error || 'Failed to leave group');
+                    return false;
+                }
+
+                removeJoinedGroup(groupId);
+                showNotification('Left Group', `You left "${data.group_title}"`);
+                await loadGroups();
+                return true;
+            } catch (error) {
+                console.error('Error leaving group:', error);
+                alert('Failed to leave group. Please try again.');
+                return false;
+            }
+        }
+
+        // Check if you've been removed from joined groups
+        async function checkForRemovals() {
+            const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+
+            for (const group of joinedGroups) {
+                const memberData = await fetchGroupMembers(group.id);
+
+                if (!memberData) {
+                    // Group might have been deleted
+                    removeJoinedGroup(group.id);
+                    showNotification('Group Deleted', `The group "${group.title}" has been deleted by the owner`);
+                    continue;
+                }
+
+                // Check if I'm still a member
+                const isMember = memberData.members.some(m => m.player_handle === group.my_handle);
+
+                if (!isMember) {
+                    // I've been removed
+                    removeJoinedGroup(group.id);
+                    showNotification('Removed from Group', `You have been removed from "${group.title}"`);
+                }
+            }
         }
 
         // ============================================
@@ -1672,18 +1904,34 @@
                 const members = memberData.members || [];
                 const memberCount = members.length;
 
-                // Check for new members
+                // Check for new members and track who left
                 const previousCount = lastMemberCounts[group.id] || memberCount;
+                const previousMembers = lastMemberCounts[`${group.id}_members`] || [];
+                const currentMemberHandles = members.map(m => m.player_handle);
+                const previousMemberHandles = previousMembers.map(m => m.player_handle);
+
+                // Detect new members
                 if (memberCount > previousCount && previousCount > 0) {
-                    const newMembers = members.slice(previousCount);
-                    newMembers.forEach(member => {
+                    const newMemberHandles = currentMemberHandles.filter(h => !previousMemberHandles.includes(h));
+                    newMemberHandles.forEach(handle => {
+                        addNotification(group.id, 'joined', `${handle} joined the group`);
                         showNotification(
                             '🎉 New Member Joined!',
-                            `${member.player_handle} joined your group: ${group.title}`
+                            `${handle} joined your group: ${group.title}`
                         );
                     });
                 }
+
+                // Detect members who left
+                if (previousCount > 0 && memberCount < previousCount) {
+                    const leftMemberHandles = previousMemberHandles.filter(h => !currentMemberHandles.includes(h));
+                    leftMemberHandles.forEach(handle => {
+                        addNotification(group.id, 'left', `${handle} left the group`);
+                    });
+                }
+
                 lastMemberCounts[group.id] = memberCount;
+                lastMemberCounts[`${group.id}_members`] = members;
 
                 return `
                     <div class="my-group-card">
@@ -1704,16 +1952,36 @@
                         <div class="members-list">
                             <div class="members-title">Members (${memberCount}):</div>
                             ${members.length > 0 ? members.map((member, idx) => {
-                                const isNew = idx >= previousCount && previousCount > 0;
+                                const isNew = currentMemberHandles.includes(member.player_handle) && !previousMemberHandles.includes(member.player_handle);
+                                const isCreator = member.player_handle === memberData.group.creator_handle;
                                 return `<div class="member-item">
                                     <span class="member-handle">
                                         <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
+                                        ${isCreator ? ' <span style="color: #6bb6ff; font-weight: bold;">(You)</span>' : ''}
                                         ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}
                                     </span>
-                                    <span class="member-joined">Joined: ${new Date(member.joined_at).toLocaleTimeString()}</span>
+                                    <span>
+                                        ${!isCreator ? `<button class="remove-member-btn" onclick="removeMemberFromGroup('${escapeHtml(group.id)}', '${escapeHtml(member.player_handle)}', '${escapeHtml(memberData.group.creator_handle)}')">Remove</button>` : ''}
+                                    </span>
                                 </div>`;
                             }).join('') : '<div class="no-members">No members yet</div>'}
                         </div>
+                        ${(() => {
+                            const notifications = getGroupNotifications(group.id);
+                            if (notifications.length > 0) {
+                                return `<div class="notification-history">
+                                    <div class="notification-history-title">Recent Activity (Last 10):</div>
+                                    ${notifications.slice(0, 10).map(notif =>
+                                        `<div class="notification-item ${notif.type}">
+                                            ${escapeHtml(notif.message)}
+                                            <span class="notification-time">${new Date(notif.timestamp).toLocaleTimeString()}</span>
+                                        </div>`
+                                    ).join('')}
+                                </div>`;
+                            }
+                            return '';
+                        })()}
+                        <button class="delete-group-btn" onclick="deleteGroup('${escapeHtml(group.id)}', '${escapeHtml(memberData.group.creator_handle)}')">🗑️ Delete Group</button>
                     </div>
                 `;
             }));
@@ -1758,7 +2026,7 @@
                             </div>
                             <div>
                                 <button class="refresh-members-btn" onclick="renderJoinedGroups()">🔄 Refresh</button>
-                                <button class="leave-group-btn" onclick="removeJoinedGroup('${escapeHtml(group.id)}')">Remove</button>
+                                <button class="leave-group-btn" onclick="leaveGroup('${escapeHtml(group.id)}', '${escapeHtml(group.my_handle)}')">🚪 Leave Group</button>
                             </div>
                         </div>
                         <div class="group-meta">
@@ -1789,6 +2057,7 @@
             pollingInterval = setInterval(() => {
                 renderMyGroups();
                 renderJoinedGroups();
+                checkForRemovals(); // Check if removed from any joined groups
             }, 10000); // Poll every 10 seconds
         }
 
