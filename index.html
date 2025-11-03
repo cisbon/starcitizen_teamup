@@ -572,6 +572,168 @@
             text-decoration: underline;
         }
 
+        /* My Groups / Joined Groups Section */
+        .my-groups-section,
+        .joined-groups-section {
+            background: linear-gradient(135deg, rgba(15, 44, 62, 0.95) 0%, rgba(10, 31, 46, 0.95) 100%);
+            padding: 30px;
+            border-radius: 0;
+            margin-bottom: 30px;
+            border: 1px solid #2a4a5e;
+            border-left: 4px solid #6bb6ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .my-groups-section h2,
+        .joined-groups-section h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            border-bottom: 2px solid #2a4a5e;
+            padding-bottom: 15px;
+        }
+
+        .my-group-card {
+            background: linear-gradient(135deg, rgba(10, 31, 46, 0.95) 0%, rgba(8, 25, 38, 0.95) 100%);
+            border: 1px solid #2a4a5e;
+            border-left: 3px solid #6bb6ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .my-group-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .my-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .my-group-title {
+            color: #ffffff;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .leave-group-btn,
+        .refresh-members-btn {
+            padding: 8px 15px;
+            background: rgba(173, 211, 235, 0.2);
+            border: 1px solid #add3eb;
+            color: #add3eb;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .leave-group-btn:hover,
+        .refresh-members-btn:hover {
+            background: rgba(173, 211, 235, 0.4);
+            box-shadow: 0 0 10px rgba(173, 211, 235, 0.3);
+        }
+
+        .leave-group-btn {
+            background: rgba(255, 100, 100, 0.2);
+            border-color: #ff6464;
+            color: #ff6464;
+        }
+
+        .leave-group-btn:hover {
+            background: rgba(255, 100, 100, 0.4);
+        }
+
+        .members-list {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2a4a5e;
+        }
+
+        .members-title {
+            color: #add3eb;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .member-item {
+            padding: 8px 12px;
+            background: rgba(173, 211, 235, 0.1);
+            border-left: 2px solid #add3eb;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .member-handle {
+            color: #cce5f2;
+            font-weight: 500;
+        }
+
+        .member-handle a {
+            color: #add3eb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .member-handle a:hover {
+            color: #cce5f2;
+            text-decoration: underline;
+        }
+
+        .member-joined {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .new-member-badge {
+            background: #6bb6ff;
+            color: #0f2c3e;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .no-members {
+            color: #666;
+            font-style: italic;
+            padding: 10px 0;
+        }
+
+        .profile-link {
+            color: #add3eb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .profile-link:hover {
+            color: #cce5f2;
+            text-decoration: underline;
+        }
+
         /* Imprint Popup */
         .popup-overlay {
             display: none;
@@ -678,6 +840,18 @@
                 <a href="https://robertsspaceindustries.com/enlist?referral=STAR-LXQB-YHNZ" target="_blank" rel="noopener noreferrer" class="support-button referral">🚀 Join Star Citizen</a>
             </div>
         </header>
+
+        <!-- My Groups Section (Shows groups I created) -->
+        <section class="my-groups-section" id="myGroupsSection" style="display: none;">
+            <h2>📋 My Groups (Groups I Created)</h2>
+            <div id="myGroupsContainer"></div>
+        </section>
+
+        <!-- Joined Groups Section (Shows groups I joined) -->
+        <section class="joined-groups-section" id="joinedGroupsSection" style="display: none;">
+            <h2>👥 Joined Groups</h2>
+            <div id="joinedGroupsContainer"></div>
+        </section>
 
         <!-- Create Group Section (FIRST - User's preference) -->
         <section class="create-group-section">
@@ -1079,7 +1253,7 @@
                     ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
                     <div class="group-meta">
                         <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
-                        <span class="creator">by ${escapeHtml(group.creator_handle)}</span>
+                        <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
                     </div>
                     <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
                 </div>
@@ -1207,6 +1381,14 @@
                     return;
                 }
 
+                // Add to My Groups localStorage
+                addMyGroup(data.group.id, {
+                    title: groupTitle,
+                    activity_type: activityType,
+                    ship: ship,
+                    max_players: maxPlayers
+                });
+
                 form.reset();
                 alert('Group created successfully! 🚀');
 
@@ -1272,6 +1454,18 @@
                     return;
                 }
 
+                // Find the group info from allGroups to save it
+                const joinedGroupInfo = allGroups.find(g => g.id === groupId);
+                if (joinedGroupInfo) {
+                    addJoinedGroup(groupId, {
+                        title: joinedGroupInfo.title,
+                        creator_handle: joinedGroupInfo.creator_handle,
+                        activity_type: joinedGroupInfo.activity_type,
+                        ship: joinedGroupInfo.ship,
+                        max_players: joinedGroupInfo.max_players
+                    }, playerHandle);
+                }
+
                 if (data.is_full) {
                     alert('Successfully joined! Group is now full. 🎉');
                 } else {
@@ -1289,11 +1483,321 @@
         }
 
         // ============================================
+        // LOCALSTORAGE & MY GROUPS MANAGEMENT
+        // ============================================
+
+        // LocalStorage keys
+        const STORAGE_KEYS = {
+            MY_GROUPS: 'sc_teamup_my_groups',
+            JOINED_GROUPS: 'sc_teamup_joined_groups',
+            LAST_MEMBER_COUNTS: 'sc_teamup_member_counts'
+        };
+
+        // Get data from localStorage
+        function getLocalStorage(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error('Error reading from localStorage:', e);
+                return [];
+            }
+        }
+
+        // Save data to localStorage
+        function setLocalStorage(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error('Error writing to localStorage:', e);
+            }
+        }
+
+        // Add group I created to localStorage
+        function addMyGroup(groupId, groupData) {
+            const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+            myGroups.push({
+                id: groupId,
+                title: groupData.title,
+                activity_type: groupData.activity_type,
+                ship: groupData.ship,
+                max_players: groupData.max_players,
+                created_at: new Date().toISOString()
+            });
+            setLocalStorage(STORAGE_KEYS.MY_GROUPS, myGroups);
+            renderMyGroups();
+        }
+
+        // Add group I joined to localStorage
+        function addJoinedGroup(groupId, groupData, myHandle) {
+            const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+            joinedGroups.push({
+                id: groupId,
+                title: groupData.title,
+                creator_handle: groupData.creator_handle,
+                activity_type: groupData.activity_type,
+                ship: groupData.ship,
+                max_players: groupData.max_players,
+                my_handle: myHandle,
+                joined_at: new Date().toISOString()
+            });
+            setLocalStorage(STORAGE_KEYS.JOINED_GROUPS, joinedGroups);
+            renderJoinedGroups();
+        }
+
+        // Remove group from My Groups
+        function removeMyGroup(groupId) {
+            const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+            const filtered = myGroups.filter(g => g.id !== groupId);
+            setLocalStorage(STORAGE_KEYS.MY_GROUPS, filtered);
+            renderMyGroups();
+        }
+
+        // Remove group from Joined Groups
+        function removeJoinedGroup(groupId) {
+            const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+            const filtered = joinedGroups.filter(g => g.id !== groupId);
+            setLocalStorage(STORAGE_KEYS.JOINED_GROUPS, filtered);
+            renderJoinedGroups();
+        }
+
+        // ============================================
+        // NOTIFICATION & SOUND
+        // ============================================
+
+        let notificationPermission = false;
+
+        // Request notification permission
+        async function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                const permission = await Notification.requestPermission();
+                notificationPermission = (permission === 'granted');
+            } else if ('Notification' in window && Notification.permission === 'granted') {
+                notificationPermission = true;
+            }
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                // Create a simple beep sound using Web Audio API
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.error('Error playing sound:', e);
+            }
+        }
+
+        // Show browser notification
+        function showNotification(title, body) {
+            if (notificationPermission && 'Notification' in window) {
+                new Notification(title, {
+                    body: body,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">🚀</text></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">🚀</text></svg>'
+                });
+            }
+            playNotificationSound();
+        }
+
+        // ============================================
+        // MY GROUPS RENDERING & POLLING
+        // ============================================
+
+        let pollingInterval = null;
+        let lastMemberCounts = {};
+
+        // Fetch group members
+        async function fetchGroupMembers(groupId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_group_members.php?group_id=${groupId}`);
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data.success ? data : null;
+            } catch (error) {
+                console.error('Error fetching group members:', error);
+                return null;
+            }
+        }
+
+        // Render My Groups section
+        async function renderMyGroups() {
+            const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+            const section = document.getElementById('myGroupsSection');
+            const container = document.getElementById('myGroupsContainer');
+
+            if (myGroups.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const groupsHtml = await Promise.all(myGroups.map(async (group) => {
+                const memberData = await fetchGroupMembers(group.id);
+
+                if (!memberData) {
+                    return `<div class="my-group-card">
+                        <div class="my-group-header">
+                            <div class="my-group-title">${escapeHtml(group.title)} (Error loading)</div>
+                            <button class="leave-group-btn" onclick="removeMyGroup('${escapeHtml(group.id)}')">Remove</button>
+                        </div>
+                    </div>`;
+                }
+
+                const members = memberData.members || [];
+                const memberCount = members.length;
+
+                // Check for new members
+                const previousCount = lastMemberCounts[group.id] || memberCount;
+                if (memberCount > previousCount && previousCount > 0) {
+                    const newMembers = members.slice(previousCount);
+                    newMembers.forEach(member => {
+                        showNotification(
+                            '🎉 New Member Joined!',
+                            `${member.player_handle} joined your group: ${group.title}`
+                        );
+                    });
+                }
+                lastMemberCounts[group.id] = memberCount;
+
+                return `
+                    <div class="my-group-card">
+                        <div class="my-group-header">
+                            <div>
+                                <div class="my-group-title">${escapeHtml(group.title)}</div>
+                                <span class="group-activity">${escapeHtml(group.activity_type)}</span>
+                                ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
+                            </div>
+                            <div>
+                                <button class="refresh-members-btn" onclick="renderMyGroups()">🔄 Refresh</button>
+                                <button class="leave-group-btn" onclick="removeMyGroup('${escapeHtml(group.id)}')">Remove</button>
+                            </div>
+                        </div>
+                        <div class="group-meta">
+                            <span class="player-count">👥 ${memberCount}/${parseInt(group.max_players)}</span>
+                        </div>
+                        <div class="members-list">
+                            <div class="members-title">Members (${memberCount}):</div>
+                            ${members.length > 0 ? members.map((member, idx) => {
+                                const isNew = idx >= previousCount && previousCount > 0;
+                                return `<div class="member-item">
+                                    <span class="member-handle">
+                                        <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
+                                        ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}
+                                    </span>
+                                    <span class="member-joined">Joined: ${new Date(member.joined_at).toLocaleTimeString()}</span>
+                                </div>`;
+                            }).join('') : '<div class="no-members">No members yet</div>'}
+                        </div>
+                    </div>
+                `;
+            }));
+
+            container.innerHTML = groupsHtml.join('');
+        }
+
+        // Render Joined Groups section
+        async function renderJoinedGroups() {
+            const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+            const section = document.getElementById('joinedGroupsSection');
+            const container = document.getElementById('joinedGroupsContainer');
+
+            if (joinedGroups.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const groupsHtml = await Promise.all(joinedGroups.map(async (group) => {
+                const memberData = await fetchGroupMembers(group.id);
+
+                if (!memberData) {
+                    return `<div class="my-group-card">
+                        <div class="my-group-header">
+                            <div class="my-group-title">${escapeHtml(group.title)} (Error loading)</div>
+                            <button class="leave-group-btn" onclick="removeJoinedGroup('${escapeHtml(group.id)}')">Remove</button>
+                        </div>
+                    </div>`;
+                }
+
+                const members = memberData.members || [];
+
+                return `
+                    <div class="my-group-card">
+                        <div class="my-group-header">
+                            <div>
+                                <div class="my-group-title">${escapeHtml(group.title)}</div>
+                                <span class="group-activity">${escapeHtml(group.activity_type)}</span>
+                                ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
+                            </div>
+                            <div>
+                                <button class="refresh-members-btn" onclick="renderJoinedGroups()">🔄 Refresh</button>
+                                <button class="leave-group-btn" onclick="removeJoinedGroup('${escapeHtml(group.id)}')">Remove</button>
+                            </div>
+                        </div>
+                        <div class="group-meta">
+                            <span class="player-count">👥 ${members.length}/${parseInt(group.max_players)}</span>
+                            <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
+                        </div>
+                        <div class="members-list">
+                            <div class="members-title">Members (${members.length}):</div>
+                            ${members.length > 0 ? members.map(member =>
+                                `<div class="member-item">
+                                    <span class="member-handle">
+                                        <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
+                                    </span>
+                                    <span class="member-joined">Joined: ${new Date(member.joined_at).toLocaleTimeString()}</span>
+                                </div>`
+                            ).join('') : '<div class="no-members">No members yet</div>'}
+                        </div>
+                    </div>
+                `;
+            }));
+
+            container.innerHTML = groupsHtml.join('');
+        }
+
+        // Start polling for new members (every 10 seconds)
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(() => {
+                renderMyGroups();
+                renderJoinedGroups();
+            }, 10000); // Poll every 10 seconds
+        }
+
+        // ============================================
         // INITIALIZATION
         // ============================================
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize
             loadGroups();
+
+            // Request notification permission
+            await requestNotificationPermission();
+
+            // Render My Groups and Joined Groups
+            await renderMyGroups();
+            await renderJoinedGroups();
+
+            // Start polling for new members
+            startPolling();
 
             const form = document.getElementById('createGroupForm');
             form.addEventListener('submit', createGroup);
