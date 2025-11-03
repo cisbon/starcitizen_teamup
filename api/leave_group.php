@@ -45,47 +45,84 @@ try {
 
     $pdo = getDbConnection();
 
-    // Get group info
-    $stmt = $pdo->prepare("
-        SELECT creator_handle, title
-        FROM starcitizen_teamup_groups
-        WHERE id = ?
-    ");
-    $stmt->execute([$groupId]);
-    $group = $stmt->fetch();
+    // Start transaction
+    $pdo->beginTransaction();
 
-    if (!$group) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Group not found']);
-        exit;
+    try {
+        // Get group info
+        $stmt = $pdo->prepare("
+            SELECT creator_handle, title, status, max_players
+            FROM starcitizen_teamup_groups
+            WHERE id = ?
+        ");
+        $stmt->execute([$groupId]);
+        $group = $stmt->fetch();
+
+        if (!$group) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['error' => 'Group not found']);
+            exit;
+        }
+
+        // Don't allow creator to leave (they should delete the group instead)
+        if ($group['creator_handle'] === $playerHandle) {
+            $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode(['error' => 'Group creators cannot leave. Delete the group instead.']);
+            exit;
+        }
+
+        // Remove the member
+        $stmt = $pdo->prepare("
+            DELETE FROM starcitizen_teamup_members
+            WHERE group_id = ? AND player_handle = ?
+        ");
+        $stmt->execute([$groupId, $playerHandle]);
+
+        if ($stmt->rowCount() === 0) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['error' => 'You are not a member of this group']);
+            exit;
+        }
+
+        // Check if group was full and now has space
+        if ($group['status'] === 'full') {
+            // Get current member count
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) as count
+                FROM starcitizen_teamup_members
+                WHERE group_id = ?
+            ");
+            $stmt->execute([$groupId]);
+            $memberCount = $stmt->fetch()['count'];
+
+            // If group is no longer full, reopen it and extend expiry to 2 hours
+            if ($memberCount < $group['max_players']) {
+                $newExpiresAt = date('Y-m-d H:i:s', strtotime('+2 hours'));
+                $stmt = $pdo->prepare("
+                    UPDATE starcitizen_teamup_groups
+                    SET status = 'open', expires_at = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$newExpiresAt, $groupId]);
+            }
+        }
+
+        $pdo->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Left group successfully',
+            'group_title' => $group['title'],
+            'creator_handle' => $group['creator_handle']
+        ]);
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
     }
-
-    // Don't allow creator to leave (they should delete the group instead)
-    if ($group['creator_handle'] === $playerHandle) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Group creators cannot leave. Delete the group instead.']);
-        exit;
-    }
-
-    // Remove the member
-    $stmt = $pdo->prepare("
-        DELETE FROM starcitizen_teamup_members
-        WHERE group_id = ? AND player_handle = ?
-    ");
-    $stmt->execute([$groupId, $playerHandle]);
-
-    if ($stmt->rowCount() === 0) {
-        http_response_code(404);
-        echo json_encode(['error' => 'You are not a member of this group']);
-        exit;
-    }
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Left group successfully',
-        'group_title' => $group['title'],
-        'creator_handle' => $group['creator_handle']
-    ]);
 
 } catch (PDOException $e) {
     error_log('Database error in leave_group: ' . $e->getMessage());

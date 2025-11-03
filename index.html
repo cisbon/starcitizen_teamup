@@ -2037,8 +2037,8 @@
                     return `<div class="my-group-card">
                         <div class="my-group-header">
                             <div class="my-group-title">${escapeHtml(group.title)} (Error loading)</div>
-                            <button class="leave-group-btn" onclick="removeMyGroup('${escapeHtml(group.id)}')">Remove</button>
                         </div>
+                        <p style="color: #999; padding: 10px;">This group may have been deleted. <a href="#" onclick="removeMyGroup('${escapeHtml(group.id)}'); return false;" style="color: #add3eb; text-decoration: underline;">Click here to remove from list</a></p>
                     </div>`;
                 }
 
@@ -2084,7 +2084,6 @@
                             </div>
                             <div>
                                 <button class="refresh-members-btn" onclick="renderMyGroups()">🔄 Refresh</button>
-                                <button class="leave-group-btn" onclick="removeMyGroup('${escapeHtml(group.id)}')">Remove</button>
                             </div>
                         </div>
                         <div class="group-meta">
@@ -2097,6 +2096,7 @@
                                 const isCreator = member.player_handle === memberData.group.creator_handle;
                                 return `<div class="member-item">
                                     <span class="member-handle">
+                                        ${isCreator ? '<span style="font-size: 1.1em;">👑</span> ' : ''}
                                         <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
                                         ${isCreator ? ' <span style="color: #6bb6ff; font-weight: bold;">(You)</span>' : ''}
                                         ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}

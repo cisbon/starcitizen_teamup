@@ -52,52 +52,90 @@ try {
 
     $pdo = getDbConnection();
 
-    // Verify requesting user is the group creator
-    $stmt = $pdo->prepare("
-        SELECT creator_handle
-        FROM starcitizen_teamup_groups
-        WHERE id = ?
-    ");
-    $stmt->execute([$groupId]);
-    $group = $stmt->fetch();
+    // Start transaction
+    $pdo->beginTransaction();
 
-    if (!$group) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Group not found']);
-        exit;
+    try {
+        // Verify requesting user is the group creator and get group info
+        $stmt = $pdo->prepare("
+            SELECT creator_handle, status, max_players
+            FROM starcitizen_teamup_groups
+            WHERE id = ?
+        ");
+        $stmt->execute([$groupId]);
+        $group = $stmt->fetch();
+
+        if (!$group) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['error' => 'Group not found']);
+            exit;
+        }
+
+        if ($group['creator_handle'] !== $requestingUser) {
+            $pdo->rollBack();
+            http_response_code(403);
+            echo json_encode(['error' => 'Only the group creator can remove members']);
+            exit;
+        }
+
+        // Don't allow removing the creator
+        if ($playerHandle === $requestingUser) {
+            $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode(['error' => 'Cannot remove yourself. Use delete group instead.']);
+            exit;
+        }
+
+        // Remove the member
+        $stmt = $pdo->prepare("
+            DELETE FROM starcitizen_teamup_members
+            WHERE group_id = ? AND player_handle = ?
+        ");
+        $stmt->execute([$groupId, $playerHandle]);
+
+        if ($stmt->rowCount() === 0) {
+            $pdo->rollBack();
+            http_response_code(404);
+            echo json_encode(['error' => 'Member not found in group']);
+            exit;
+        }
+
+        // Check if group was full and now has space
+        if ($group['status'] === 'full') {
+            // Get current member count
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) as count
+                FROM starcitizen_teamup_members
+                WHERE group_id = ?
+            ");
+            $stmt->execute([$groupId]);
+            $memberCount = $stmt->fetch()['count'];
+
+            // If group is no longer full, reopen it and extend expiry to 2 hours
+            if ($memberCount < $group['max_players']) {
+                $newExpiresAt = date('Y-m-d H:i:s', strtotime('+2 hours'));
+                $stmt = $pdo->prepare("
+                    UPDATE starcitizen_teamup_groups
+                    SET status = 'open', expires_at = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$newExpiresAt, $groupId]);
+            }
+        }
+
+        $pdo->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Member removed successfully',
+            'removed_handle' => $playerHandle
+        ]);
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
     }
-
-    if ($group['creator_handle'] !== $requestingUser) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Only the group creator can remove members']);
-        exit;
-    }
-
-    // Don't allow removing the creator
-    if ($playerHandle === $requestingUser) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Cannot remove yourself. Use delete group instead.']);
-        exit;
-    }
-
-    // Remove the member
-    $stmt = $pdo->prepare("
-        DELETE FROM starcitizen_teamup_members
-        WHERE group_id = ? AND player_handle = ?
-    ");
-    $stmt->execute([$groupId, $playerHandle]);
-
-    if ($stmt->rowCount() === 0) {
-        http_response_code(404);
-        echo json_encode(['error' => 'Member not found in group']);
-        exit;
-    }
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Member removed successfully',
-        'removed_handle' => $playerHandle
-    ]);
 
 } catch (PDOException $e) {
     error_log('Database error in remove_member: ' . $e->getMessage());
