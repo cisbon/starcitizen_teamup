@@ -969,6 +969,90 @@
             background: rgba(173, 211, 235, 0.4);
         }
 
+        /* Star Rating */
+        .star-rating {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .star {
+            font-size: 2.5em;
+            color: #2a4a5e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #ffd700;
+            transform: scale(1.1);
+        }
+
+        .star.selected {
+            color: #ffd700;
+        }
+
+        /* User Rating Display */
+        .user-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #add3eb;
+            margin-left: 10px;
+        }
+
+        .rating-score {
+            font-weight: bold;
+        }
+
+        .rating-score.positive {
+            color: #6bb6ff;
+        }
+
+        .rating-score.negative {
+            color: #ff6464;
+        }
+
+        .rating-buttons {
+            display: inline-flex;
+            gap: 6px;
+            margin-left: 10px;
+        }
+
+        .rating-btn {
+            padding: 4px 8px;
+            background: rgba(173, 211, 235, 0.2);
+            border: 1px solid #add3eb;
+            color: #add3eb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2em;
+        }
+
+        .rating-btn:hover:not(:disabled) {
+            background: rgba(173, 211, 235, 0.4);
+            transform: scale(1.1);
+        }
+
+        .rating-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .rating-btn.thumbs-up:hover:not(:disabled) {
+            color: #6bb6ff;
+            border-color: #6bb6ff;
+        }
+
+        .rating-btn.thumbs-down:hover:not(:disabled) {
+            color: #ff6464;
+            border-color: #ff6464;
+        }
+
         /* Imprint Popup */
         .popup-overlay {
             display: none;
@@ -1069,11 +1153,10 @@
         <header>
             <h1>Star Citizen Team</h1>
             <p>Find your crew for any mission across the verse</p>
-            <!--<div class="support-buttons">
+            <div class="support-buttons">
+                <a href="#" onclick="document.getElementById('feedbackPopup').classList.add('show'); return false;" class="support-button">💬 Submit Feedback</a>
                 <a href="https://ko-fi.com/starcitizenteam" target="_blank" rel="noopener noreferrer" class="support-button">☕ Support on Ko-Fi</a>
-                <a href="https://patreon.com/starcitizenteam" target="_blank" rel="noopener noreferrer" class="support-button">💎 Support on Patreon</a>
-                <a href="https://www.robertsspaceindustries.com/enlist?referral=STAR-BJC6-K4LR" target="_blank" rel="noopener noreferrer" class="support-button referral">🚀 Join Star Citizen</a>
-            </div>-->
+            </div>
         </header>
 
         <!-- My Groups Section (Shows groups I created) -->
@@ -1277,6 +1360,48 @@
             <div class="input-modal-actions">
                 <button class="input-modal-btn secondary" onclick="closeHandleInputModal(false)">Cancel</button>
                 <button class="input-modal-btn primary" onclick="submitHandleInput()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Popup -->
+    <div class="popup-overlay" id="feedbackPopup" onclick="if(event.target===this) this.classList.remove('show');">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Submit Feedback</h3>
+                <button class="popup-close" onclick="document.getElementById('feedbackPopup').classList.remove('show');">&times;</button>
+            </div>
+            <div class="popup-body">
+                <p style="color: #add3eb; margin-bottom: 20px;">We'd love to hear your thoughts! Please rate your experience and share any feedback.</p>
+
+                <div class="form-group">
+                    <label style="color: #add3eb; display: block; margin-bottom: 10px;">Your Rating *</label>
+                    <div class="star-rating" id="feedbackStars">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="feedbackMessage" style="color: #add3eb;">Your Feedback (Optional)</label>
+                    <textarea
+                        id="feedbackMessage"
+                        placeholder="Tell us what you think, what we can improve, or any issues you've encountered..."
+                        maxlength="1000"
+                        rows="6"
+                        style="width: 100%; padding: 12px; background: rgba(15, 44, 62, 0.6); border: 1px solid #2a4a5e; color: #e0e0e0; resize: vertical; font-family: inherit;"></textarea>
+                    <span class="input-hint">Optional, max 1000 characters</span>
+                </div>
+
+                <div id="feedbackError" style="color: #ff6464; margin-top: 10px; display: none;"></div>
+                <div id="feedbackSuccess" style="color: #6bb6ff; margin-top: 10px; display: none;"></div>
+
+                <button onclick="submitFeedback()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #add3eb 0%, #8ab3d1 100%); border: 1px solid #add3eb; color: #0f2c3e; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-top: 20px;">
+                    Submit Feedback
+                </button>
             </div>
         </div>
     </div>
@@ -1572,6 +1697,146 @@
         }
 
         // ============================================
+        // FEEDBACK SYSTEM
+        // ============================================
+
+        let selectedRating = 0;
+
+        // Star rating interaction
+        document.addEventListener('DOMContentLoaded', () => {
+            const stars = document.querySelectorAll('#feedbackStars .star');
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStars();
+                });
+
+                star.addEventListener('mouseenter', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    stars.forEach((s, idx) => {
+                        if (idx < rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            document.getElementById('feedbackStars').addEventListener('mouseleave', function() {
+                updateStars();
+            });
+        });
+
+        function updateStars() {
+            const stars = document.querySelectorAll('#feedbackStars .star');
+            stars.forEach((star, idx) => {
+                if (idx < selectedRating) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+                star.classList.remove('active');
+            });
+        }
+
+        async function submitFeedback() {
+            const message = document.getElementById('feedbackMessage').value.trim();
+            const errorDiv = document.getElementById('feedbackError');
+            const successDiv = document.getElementById('feedbackSuccess');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (selectedRating === 0) {
+                errorDiv.textContent = 'Please select a rating';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/submit_feedback.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        rating: selectedRating,
+                        message: message || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    successDiv.textContent = data.message || 'Thank you for your feedback!';
+                    successDiv.style.display = 'block';
+
+                    // Reset form
+                    document.getElementById('feedbackMessage').value = '';
+                    selectedRating = 0;
+                    updateStars();
+
+                    // Close modal after 2 seconds
+                    setTimeout(() => {
+                        document.getElementById('feedbackPopup').classList.remove('show');
+                        successDiv.style.display = 'none';
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to submit feedback';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // ============================================
+        // USER RATING SYSTEM
+        // ============================================
+
+        async function rateUser(handle, rating) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/rate_user.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        player_handle: handle,
+                        rating: rating
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Rating submitted successfully!');
+                    // Reload groups to update ratings
+                    await loadGroups();
+                } else {
+                    alert(data.error || 'Failed to rate user');
+                }
+            } catch (error) {
+                console.error('Error rating user:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        async function getUserRating(handle) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_user_rating.php?handle=${encodeURIComponent(handle)}`);
+                const data = await response.json();
+                return data.success ? data : null;
+            } catch (error) {
+                console.error('Error getting user rating:', error);
+                return null;
+            }
+        }
+
+        // ============================================
         // TIMER FUNCTIONS
         // ============================================
 
@@ -1645,7 +1910,20 @@
                     ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
                     <div class="group-meta">
                         <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
-                        <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
+                        <span class="creator">
+                            by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a>
+                            ${(() => {
+                                const rating = parseInt(group.creator_rating || 0);
+                                const ratingClass = rating > 0 ? 'positive' : (rating < 0 ? 'negative' : '');
+                                return `<span class="user-rating">
+                                    <span class="rating-score ${ratingClass}">${rating > 0 ? '+' : ''}${rating}</span>
+                                    <span class="rating-buttons">
+                                        <button class="rating-btn thumbs-up" data-handle="${escapeHtml(group.creator_handle)}" data-rating="1" title="Rate positively">👍</button>
+                                        <button class="rating-btn thumbs-down" data-handle="${escapeHtml(group.creator_handle)}" data-rating="-1" title="Rate negatively">👎</button>
+                                    </span>
+                                </span>`;
+                            })()}
+                        </span>
                     </div>
                     <div class="group-timer ${timer.class}" title="${timerTooltip}">
                         ⏱️ ${timer.text}
@@ -1663,6 +1941,15 @@
             document.querySelectorAll('.join-button').forEach(button => {
                 button.addEventListener('click', function() {
                     handleJoinGroup(this.dataset.groupId);
+                });
+            });
+
+            // Add event listeners for rating buttons
+            document.querySelectorAll('.rating-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const handle = this.dataset.handle;
+                    const rating = parseInt(this.dataset.rating);
+                    rateUser(handle, rating);
                 });
             });
         }
@@ -1727,6 +2014,16 @@
                 const description = sanitizeInput(formData.get('description'));
                 const ship = sanitizeInput(formData.get('ship'));
                 const maxPlayers = formData.get('maxPlayers');
+
+                // Check 2-group limit
+                const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+                const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+                const totalGroups = myGroups.length + joinedGroups.length;
+
+                if (totalGroups >= 2) {
+                    showError('You can only be part of 2 groups maximum (created or joined). Please leave a group first.');
+                    return;
+                }
 
                 if (!validateHandle(creatorHandle)) {
                     showError('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
@@ -1827,6 +2124,16 @@
 
         async function joinGroup(groupId, playerHandle) {
             try {
+                // Check 2-group limit
+                const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+                const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
+                const totalGroups = myGroups.length + joinedGroups.length;
+
+                if (totalGroups >= 2) {
+                    alert('You can only be part of 2 groups maximum (created or joined). Please leave a group first.');
+                    return;
+                }
+
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = true);
 
                 const response = await fetch(`${API_BASE_URL}/join_group.php`, {

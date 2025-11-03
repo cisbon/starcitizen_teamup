@@ -29,16 +29,18 @@ try {
         AND expires_at < NOW()
     ");
 
-    // Load all open groups
+    // Load all open groups with creator ratings
     $stmt = $pdo->prepare("
         SELECT
             g.*,
-            COUNT(m.id) as member_count
+            COUNT(m.id) as member_count,
+            COALESCE(SUM(r.rating), 0) as creator_rating
         FROM starcitizen_teamup_groups g
         LEFT JOIN starcitizen_teamup_members m ON g.id = m.group_id
+        LEFT JOIN starcitizen_teamup_user_ratings r ON g.creator_handle = r.player_handle
         WHERE g.status = 'open'
         GROUP BY g.id
-        ORDER BY g.created_at DESC
+        ORDER BY creator_rating DESC, g.created_at DESC
         LIMIT 100
     ");
 

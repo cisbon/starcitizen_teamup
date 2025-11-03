@@ -135,3 +135,45 @@ DELIMITER ;
 
 -- You can call this procedure periodically or from a cron job
 -- CALL clean_expired_groups();
+
+-- Feedback Table
+CREATE TABLE IF NOT EXISTS `starcitizen_teamup_feedback` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `rating` TINYINT NOT NULL,
+  `message` TEXT,
+  `user_ip` VARCHAR(45),
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Constraints
+  CONSTRAINT `chk_feedback_rating` CHECK (rating >= 1 AND rating <= 5),
+  CONSTRAINT `chk_feedback_message` CHECK (
+    message IS NULL OR CHAR_LENGTH(message) <= 1000
+  ),
+
+  -- Indexes
+  INDEX `idx_created_at` (`created_at`),
+  INDEX `idx_rating` (`rating`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User Ratings Table
+CREATE TABLE IF NOT EXISTS `starcitizen_teamup_user_ratings` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `player_handle` VARCHAR(50) NOT NULL,
+  `rating` TINYINT NOT NULL,
+  `rated_by_ip` VARCHAR(45) NOT NULL,
+  `rated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Constraints
+  CONSTRAINT `chk_rating_value` CHECK (rating IN (-1, 1)),
+  CONSTRAINT `chk_rating_handle` CHECK (
+    CHAR_LENGTH(player_handle) >= 3 AND
+    CHAR_LENGTH(player_handle) <= 50 AND
+    player_handle REGEXP '^[a-zA-Z0-9_-]+$'
+  ),
+
+  -- Indexes
+  INDEX `idx_player_handle` (`player_handle`),
+  INDEX `idx_rated_by_ip` (`rated_by_ip`),
+  INDEX `idx_rated_at` (`rated_at`),
+  UNIQUE KEY `unique_ip_handle_daily` (`rated_by_ip`, `player_handle`, `rated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
