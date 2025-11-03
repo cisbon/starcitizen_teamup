@@ -1771,19 +1771,16 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    successDiv.textContent = data.message || 'Thank you for your feedback!';
-                    successDiv.style.display = 'block';
+                    // Close modal immediately
+                    document.getElementById('feedbackPopup').classList.remove('show');
 
                     // Reset form
                     document.getElementById('feedbackMessage').value = '';
                     selectedRating = 0;
                     updateStars();
 
-                    // Close modal after 2 seconds
-                    setTimeout(() => {
-                        document.getElementById('feedbackPopup').classList.remove('show');
-                        successDiv.style.display = 'none';
-                    }, 2000);
+                    // Show notification
+                    showNotification('Feedback Sent', 'Thank you for your feedback! We appreciate your input.');
                 } else {
                     errorDiv.textContent = data.error || 'Failed to submit feedback';
                     errorDiv.style.display = 'block';
@@ -1815,8 +1812,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    alert('Rating submitted successfully!');
-                    // Reload groups to update ratings
+                    showNotification('Rating Submitted', `You rated ${handle} ${rating > 0 ? 'positively' : 'negatively'}`);
+                    // Reload ratings to update display
+                    await updateMemberRatings();
+                    // Also reload groups to update group ratings
                     await loadGroups();
                 } else {
                     alert(data.error || 'Failed to rate user');
@@ -1912,24 +1911,19 @@
                     ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
                     <div class="group-meta">
                         <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
-                        <span class="creator">
-                            by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a>
-                            ${(() => {
-                                const rating = parseInt(group.creator_rating || 0);
-                                const ratingClass = rating > 0 ? 'positive' : (rating < 0 ? 'negative' : '');
-                                return `<span class="user-rating">
-                                    <span class="rating-score ${ratingClass}">${rating > 0 ? '+' : ''}${rating}</span>
-                                    <span class="rating-buttons">
-                                        <button class="rating-btn thumbs-up" data-handle="${escapeHtml(group.creator_handle)}" data-rating="1" title="Rate positively">👍</button>
-                                        <button class="rating-btn thumbs-down" data-handle="${escapeHtml(group.creator_handle)}" data-rating="-1" title="Rate negatively">👎</button>
-                                    </span>
-                                </span>`;
-                            })()}
-                        </span>
+                        <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
                     </div>
                     <div class="group-timer ${timer.class}" title="${timerTooltip}">
                         ⏱️ ${timer.text}
                     </div>
+                    ${(() => {
+                        const groupRating = parseInt(group.group_rating || 0);
+                        const ratingClass = groupRating > 0 ? 'positive' : (groupRating < 0 ? 'negative' : '');
+                        return `<div style="padding: 8px; text-align: center; border-top: 1px solid #2a4a5e; margin-top: 10px;">
+                            <span style="color: #999; font-size: 0.85em;">Group Rating: </span>
+                            <span class="rating-score ${ratingClass}" style="font-size: 1.1em;">${groupRating > 0 ? '+' : ''}${groupRating}</span>
+                        </div>`;
+                    })()}
                     ${alreadyInGroup
                         ? `<div style="padding: 12px; text-align: center; color: #add3eb; font-weight: bold; border: 1px solid #add3eb; background: rgba(173, 211, 235, 0.1);">
                             ${isMyGroup ? '✓ Your Group' : '✓ Already Joined'}
@@ -1943,15 +1937,6 @@
             document.querySelectorAll('.join-button').forEach(button => {
                 button.addEventListener('click', function() {
                     handleJoinGroup(this.dataset.groupId);
-                });
-            });
-
-            // Add event listeners for rating buttons
-            document.querySelectorAll('.rating-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const handle = this.dataset.handle;
-                    const rating = parseInt(this.dataset.rating);
-                    rateUser(handle, rating);
                 });
             });
         }
@@ -2644,12 +2629,19 @@
                             ${members.length > 0 ? members.map((member, idx) => {
                                 const isNew = currentMemberHandles.includes(member.player_handle) && !previousMemberHandles.includes(member.player_handle);
                                 const isCreator = member.player_handle === memberData.group.creator_handle;
-                                return `<div class="member-item">
+                                return `<div class="member-item" data-member-handle="${escapeHtml(member.player_handle)}">
                                     <span class="member-handle">
                                         ${isCreator ? '<span style="font-size: 1.1em;">👑</span> ' : ''}
                                         <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
                                         ${isCreator ? ' <span style="color: #6bb6ff; font-weight: bold;">(You)</span>' : ''}
                                         ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}
+                                        <span class="user-rating">
+                                            <span class="rating-score" data-handle="${escapeHtml(member.player_handle)}">Loading...</span>
+                                            ${!isCreator ? `<span class="rating-buttons" data-handle="${escapeHtml(member.player_handle)}">
+                                                <button class="rating-btn thumbs-up" data-handle="${escapeHtml(member.player_handle)}" data-rating="1" title="Rate positively">👍</button>
+                                                <button class="rating-btn thumbs-down" data-handle="${escapeHtml(member.player_handle)}" data-rating="-1" title="Rate negatively">👎</button>
+                                            </span>` : ''}
+                                        </span>
                                     </span>
                                     <span>
                                         ${!isCreator ? `<button class="remove-member-btn" onclick="removeMemberFromGroup('${escapeHtml(group.id)}', '${escapeHtml(member.player_handle)}', '${escapeHtml(memberData.group.creator_handle)}')">Remove</button>` : ''}
@@ -2678,6 +2670,43 @@
             }));
 
             container.innerHTML = groupsHtml.join('');
+
+            // Load ratings for all members and update display
+            updateMemberRatings();
+        }
+
+        // Update member ratings display (load from API and hide buttons if already rated)
+        async function updateMemberRatings() {
+            const memberItems = document.querySelectorAll('[data-member-handle]');
+            for (const item of memberItems) {
+                const handle = item.dataset.memberHandle;
+                const scoreEl = item.querySelector(`.rating-score[data-handle="${handle}"]`);
+                const buttonsEl = item.querySelector(`.rating-buttons[data-handle="${handle}"]`);
+
+                const ratingData = await getUserRating(handle);
+                if (ratingData) {
+                    const score = ratingData.total_score;
+                    const ratingClass = score > 0 ? 'positive' : (score < 0 ? 'negative' : '');
+                    scoreEl.className = `rating-score ${ratingClass}`;
+                    scoreEl.textContent = `${score > 0 ? '+' : ''}${score}`;
+
+                    // Hide buttons if user cannot rate (already rated today)
+                    if (buttonsEl && !ratingData.can_rate) {
+                        buttonsEl.style.display = 'none';
+                    }
+                } else {
+                    scoreEl.textContent = '0';
+                }
+            }
+
+            // Add event listeners for rating buttons
+            document.querySelectorAll('.rating-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const handle = this.dataset.handle;
+                    const rating = parseInt(this.dataset.rating);
+                    rateUser(handle, rating);
+                });
+            });
         }
 
         // Render Joined Groups section
@@ -2760,12 +2789,19 @@
                                 const isLeader = member.player_handle === memberData.group.creator_handle;
                                 const isMe = member.player_handle === group.my_handle;
                                 const isNew = currentMemberHandles.includes(member.player_handle) && !previousMemberHandles.includes(member.player_handle);
-                                return `<div class="member-item">
+                                return `<div class="member-item" data-member-handle="${escapeHtml(member.player_handle)}">
                                     <span class="member-handle">
                                         ${isLeader ? '<span style="font-size: 1.1em;">👑</span> ' : ''}
                                         <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(member.player_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(member.player_handle)}</a>
                                         ${isMe ? ' <span style="color: #6bb6ff; font-weight: bold;">(You)</span>' : ''}
                                         ${isNew ? '<span class="new-member-badge">NEW</span>' : ''}
+                                        <span class="user-rating">
+                                            <span class="rating-score" data-handle="${escapeHtml(member.player_handle)}">Loading...</span>
+                                            ${!isMe ? `<span class="rating-buttons" data-handle="${escapeHtml(member.player_handle)}">
+                                                <button class="rating-btn thumbs-up" data-handle="${escapeHtml(member.player_handle)}" data-rating="1" title="Rate positively">👍</button>
+                                                <button class="rating-btn thumbs-down" data-handle="${escapeHtml(member.player_handle)}" data-rating="-1" title="Rate negatively">👎</button>
+                                            </span>` : ''}
+                                        </span>
                                     </span>
                                     <span class="member-joined">Joined: ${new Date(member.joined_at).toLocaleTimeString()}</span>
                                 </div>`;
@@ -2791,6 +2827,9 @@
             }));
 
             container.innerHTML = groupsHtml.join('');
+
+            // Load ratings for all members and update display
+            updateMemberRatings();
         }
 
         // Start polling for new members (every 10 seconds)
