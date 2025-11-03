@@ -6,13 +6,10 @@
     <title>Star Citizen Team Up - LFG Platform</title>
 
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://starcitizen.gamer.gd; img-src 'self' data: https:; font-src 'self' data:;">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
-
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" integrity="sha384-..." crossorigin="anonymous"></script>
 
     <style>
         /* CSS Reset & Base Styles - RSI Inspired */
@@ -890,19 +887,9 @@
 
     <script>
         // ============================================
-        // SUPABASE CONFIGURATION
+        // API CONFIGURATION
         // ============================================
-        // TODO: Replace these with your actual Supabase credentials
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
-
-        // Initialize Supabase client with error handling
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (error) {
-            console.error('Supabase initialization error:', error);
-        }
+        const API_BASE_URL = 'https://starcitizen.gamer.gd/api';
 
         // ============================================
         // SECURITY & VALIDATION CONSTANTS
@@ -1143,17 +1130,24 @@
 
         async function loadGroups() {
             try {
-                await checkExpiredGroups();
+                const response = await fetch(`${API_BASE_URL}/load_groups.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-                const { data: groups, error: groupsError } = await supabase
-                    .from('starcitizen_teamup_groups')
-                    .select('*')
-                    .eq('status', 'open')
-                    .order('created_at', { ascending: false })
-                    .limit(100);
+                if (!response.ok) {
+                    throw new Error('Failed to load groups');
+                }
 
-                if (groupsError) throw groupsError;
+                const data = await response.json();
 
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load groups');
+                }
+
+                const groups = data.groups;
                 const groupsContainer = document.getElementById('groupsContainer');
 
                 if (!groups || groups.length === 0) {
@@ -1163,21 +1157,12 @@
                     return;
                 }
 
-                const groupsWithCounts = await Promise.all(groups.map(async (group) => {
-                    const { count, error: countError } = await supabase
-                        .from('starcitizen_teamup_members')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('group_id', group.id);
-
-                    if (countError) {
-                        console.error('Error fetching member count:', countError);
-                        return { ...group, memberCount: 0 };
-                    }
-
-                    return { ...group, memberCount: count || 0 };
+                // Map groups to include memberCount (from member_count)
+                allGroups = groups.map(group => ({
+                    ...group,
+                    memberCount: parseInt(group.member_count) || 0
                 }));
 
-                allGroups = groupsWithCounts;
                 applyFilters();
 
             } catch (error) {
@@ -1239,41 +1224,28 @@
                     return;
                 }
 
-                const expiresAt = new Date();
-                expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-
                 const groupData = {
                     creator_handle: creatorHandle,
                     activity_type: activityType,
                     title: groupTitle,
-                    description: description || null,
-                    ship: ship || null,
-                    max_players: parseInt(maxPlayers),
-                    status: 'open',
-                    expires_at: expiresAt.toISOString()
+                    description: description || '',
+                    ship: ship || '',
+                    max_players: parseInt(maxPlayers)
                 };
 
-                const { data: newGroup, error: groupError } = await supabase
-                    .from('starcitizen_teamup_groups')
-                    .insert([groupData])
-                    .select()
-                    .single();
+                const response = await fetch(`${API_BASE_URL}/create_group.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(groupData)
+                });
 
-                if (groupError) {
-                    console.error('Database error:', groupError);
-                    showError('Unable to create group. Please try again.');
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showError(data.error || 'Unable to create group. Please try again.');
                     return;
-                }
-
-                const { error: memberError } = await supabase
-                    .from('starcitizen_teamup_members')
-                    .insert([{
-                        group_id: newGroup.id,
-                        player_handle: creatorHandle
-                    }]);
-
-                if (memberError) {
-                    console.error('Member insert error:', memberError);
                 }
 
                 form.reset();
@@ -1283,7 +1255,6 @@
                 const formContainer = document.getElementById('formContainer');
                 const toggleIcon = document.getElementById('toggleIcon');
                 formContainer.classList.remove('expanded');
-                toggleIcon.classList.remove('expanded');
                 toggleIcon.textContent = '▼';
 
                 await loadGroups();
@@ -1328,87 +1299,26 @@
 
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = true);
 
-                const { data: groupCheck, error: groupCheckError } = await supabase
-                    .from('starcitizen_teamup_groups')
-                    .select('status, max_players')
-                    .eq('id', groupId)
-                    .single();
-
-                if (groupCheckError || !groupCheck) {
-                    alert('Group not found.');
-                    return;
-                }
-
-                if (groupCheck.status !== 'open') {
-                    alert('This group is no longer accepting members.');
-                    await loadGroups();
-                    return;
-                }
-
-                const { count: currentCount, error: countCheckError } = await supabase
-                    .from('starcitizen_teamup_members')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('group_id', groupId);
-
-                if (countCheckError) throw countCheckError;
-
-                if (currentCount >= groupCheck.max_players) {
-                    alert('This group is already full.');
-                    await loadGroups();
-                    return;
-                }
-
-                const { data: existingMember } = await supabase
-                    .from('starcitizen_teamup_members')
-                    .select('id')
-                    .eq('group_id', groupId)
-                    .eq('player_handle', playerHandle)
-                    .maybeSingle();
-
-                if (existingMember) {
-                    alert('You are already in this group!');
-                    return;
-                }
-
-                const { error: memberError } = await supabase
-                    .from('starcitizen_teamup_members')
-                    .insert([{
+                const response = await fetch(`${API_BASE_URL}/join_group.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
                         group_id: groupId,
                         player_handle: playerHandle
-                    }]);
+                    })
+                });
 
-                if (memberError) {
-                    if (memberError.code === '23505') {
-                        alert('You are already in this group!');
-                        return;
-                    }
-                    throw memberError;
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.error || 'Unable to join group. Please try again.');
+                    await loadGroups();
+                    return;
                 }
 
-                const { count: memberCount, error: countError } = await supabase
-                    .from('starcitizen_teamup_members')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('group_id', groupId);
-
-                if (countError) throw countError;
-
-                if (memberCount >= groupCheck.max_players) {
-                    const newExpiresAt = new Date();
-                    newExpiresAt.setMinutes(newExpiresAt.getMinutes() + 10);
-
-                    const { error: updateError } = await supabase
-                        .from('starcitizen_teamup_groups')
-                        .update({
-                            status: 'full',
-                            expires_at: newExpiresAt.toISOString()
-                        })
-                        .eq('id', groupId)
-                        .eq('status', 'open');
-
-                    if (updateError) {
-                        console.error('Error updating group status:', updateError);
-                    }
-
+                if (data.is_full) {
                     alert('Successfully joined! Group is now full. 🎉');
                 } else {
                     alert('Successfully joined the group! 🚀');
@@ -1421,27 +1331,6 @@
                 alert('Unable to join group. Please try again.');
             } finally {
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = false);
-            }
-        }
-
-        async function checkExpiredGroups() {
-            try {
-                const now = new Date().toISOString();
-
-                await supabase
-                    .from('starcitizen_teamup_groups')
-                    .update({ status: 'closed' })
-                    .eq('status', 'open')
-                    .lt('expires_at', now);
-
-                await supabase
-                    .from('starcitizen_teamup_groups')
-                    .update({ status: 'closed' })
-                    .eq('status', 'full')
-                    .lt('expires_at', now);
-
-            } catch (error) {
-                console.error('Error checking expired groups:', error);
             }
         }
 
@@ -1478,10 +1367,7 @@
 
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
-            // Check for expired groups every 60 seconds
-            setInterval(checkExpiredGroups, 60000);
-
-            // Reload groups every 30 seconds to keep fresh
+            // Reload groups every 30 seconds to keep fresh (expired groups are checked by backend)
             setInterval(loadGroups, 30000);
         });
 
