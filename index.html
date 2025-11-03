@@ -922,20 +922,6 @@
             ]
         };
 
-        // Rate limiting
-        const RATE_LIMITS = {
-            createGroup: {
-                maxAttempts: 3,
-                windowMs: 60000,
-                attempts: [],
-            },
-            joinGroup: {
-                maxAttempts: 10,
-                windowMs: 60000,
-                attempts: [],
-            }
-        };
-
         // Store all groups for filtering
         let allGroups = [];
         let currentFilters = {
@@ -1053,21 +1039,6 @@
             return num >= VALIDATION.MAX_PLAYERS.MIN && num <= VALIDATION.MAX_PLAYERS.MAX;
         }
 
-        function checkRateLimit(action) {
-            const limit = RATE_LIMITS[action];
-            if (!limit) return true;
-
-            const now = Date.now();
-            limit.attempts = limit.attempts.filter(time => now - time < limit.windowMs);
-
-            if (limit.attempts.length >= limit.maxAttempts) {
-                return false;
-            }
-
-            limit.attempts.push(now);
-            return true;
-        }
-
         function sanitizeInput(input) {
             if (!input) return '';
             return input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '').trim();
@@ -1179,11 +1150,6 @@
             submitButton.disabled = true;
 
             try {
-                if (!checkRateLimit('createGroup')) {
-                    showError('Too many requests. Please wait a minute before creating another group.');
-                    return;
-                }
-
                 const form = event.target;
                 const formData = new FormData(form);
 
@@ -1292,11 +1258,6 @@
 
         async function joinGroup(groupId, playerHandle) {
             try {
-                if (!checkRateLimit('joinGroup')) {
-                    alert('Too many requests. Please wait a minute.');
-                    return;
-                }
-
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = true);
 
                 const response = await fetch(`${API_BASE_URL}/join_group.php`, {

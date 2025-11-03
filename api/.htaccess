@@ -1,0 +1,35 @@
+# Star Citizen Team Up API - Apache Configuration
+# Place this file in the /api/ directory
+
+# Disable bot protection for API endpoints if using a service like Cloudflare
+# Note: You'll need to configure this in your hosting panel or Cloudflare settings
+
+<IfModule mod_headers.c>
+    # Allow CORS for your domain
+    Header set Access-Control-Allow-Origin "https://starcitizen.gamer.gd"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type"
+
+    # Security headers
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Allow API calls without bot challenge
+    # This may need to be configured in your hosting control panel
+
+    # Ensure PHP files are processed
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Deny direct access to config.php
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
