@@ -2002,16 +2002,6 @@
                 const ship = sanitizeInput(formData.get('ship'));
                 const maxPlayers = formData.get('maxPlayers');
 
-                // Check 2-group limit
-                const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
-                const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
-                const totalGroups = myGroups.length + joinedGroups.length;
-
-                if (totalGroups >= 2) {
-                    showError('You can only be part of 2 groups maximum (created or joined). Please leave a group first.');
-                    return;
-                }
-
                 if (!validateHandle(creatorHandle)) {
                     showError('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
                     return;
@@ -2111,16 +2101,6 @@
 
         async function joinGroup(groupId, playerHandle) {
             try {
-                // Check 2-group limit
-                const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
-                const joinedGroups = getLocalStorage(STORAGE_KEYS.JOINED_GROUPS);
-                const totalGroups = myGroups.length + joinedGroups.length;
-
-                if (totalGroups >= 2) {
-                    alert('You can only be part of 2 groups maximum (created or joined). Please leave a group first.');
-                    return;
-                }
-
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = true);
 
                 const response = await fetch(`${API_BASE_URL}/join_group.php`, {
@@ -2617,9 +2597,6 @@
                                 <span class="group-activity">${escapeHtml(group.activity_type)}</span>
                                 ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
                             </div>
-                            <div>
-                                <button class="refresh-members-btn" onclick="renderMyGroups()">🔄 Refresh</button>
-                            </div>
                         </div>
                         <div class="group-meta">
                             <span class="player-count">👥 ${memberCount}/${parseInt(group.max_players)}</span>
@@ -2775,7 +2752,6 @@
                                 ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
                             </div>
                             <div>
-                                <button class="refresh-members-btn" onclick="renderJoinedGroups()">🔄 Refresh</button>
                                 <button class="leave-group-btn" onclick="leaveGroup('${escapeHtml(group.id)}', '${escapeHtml(group.my_handle)}')">🚪 Leave Group</button>
                             </div>
                         </div>

@@ -111,6 +111,38 @@ try {
             exit;
         }
 
+        // Check 2-group limit (server-side validation)
+        // Count groups created by this handle
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM starcitizen_teamup_groups
+            WHERE creator_handle = ?
+            AND status IN ('open', 'full')
+        ");
+        $stmt->execute([$playerHandle]);
+        $createdCount = $stmt->fetch()['count'];
+
+        // Count groups joined by this handle (as member, not creator)
+        $stmt = $pdo->prepare("
+            SELECT COUNT(DISTINCT m.group_id) as count
+            FROM starcitizen_teamup_members m
+            INNER JOIN starcitizen_teamup_groups g ON m.group_id = g.id
+            WHERE m.player_handle = ?
+            AND g.creator_handle != ?
+            AND g.status IN ('open', 'full')
+        ");
+        $stmt->execute([$playerHandle, $playerHandle]);
+        $joinedCount = $stmt->fetch()['count'];
+
+        $totalGroups = $createdCount + $joinedCount;
+
+        if ($totalGroups >= 2) {
+            $pdo->rollBack();
+            http_response_code(400);
+            echo json_encode(['error' => 'You can only be part of 2 groups maximum (created or joined). Please leave a group first.']);
+            exit;
+        }
+
         // Add player to group
         $stmt = $pdo->prepare("
             INSERT INTO starcitizen_teamup_members (group_id, player_handle)
