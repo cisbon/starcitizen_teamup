@@ -80,10 +80,8 @@ try {
 
     $pdo = getDbConnection();
 
-    // Create group
-    $groupId = bin2hex(random_bytes(16));
-    $groupId = substr($groupId, 0, 8) . '-' . substr($groupId, 8, 4) . '-' . substr($groupId, 12, 4) . '-' . substr($groupId, 16, 4) . '-' . substr($groupId, 20, 12);
-
+    // Create group with UUID
+    $groupId = generateUuid();
     $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
     $stmt = $pdo->prepare("

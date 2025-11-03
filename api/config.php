@@ -4,10 +4,14 @@
  * Star Citizen Team Up - PHP Backend
  */
 
+// Suppress all errors in production (prevent HTML output before JSON)
+error_reporting(0);
+ini_set('display_errors', '0');
+
 // Prevent direct access
 if (!defined('API_ACCESS')) {
     http_response_code(403);
-    die('Direct access not permitted');
+    die(json_encode(['error' => 'Direct access not permitted']));
 }
 
 // Database Configuration
@@ -45,6 +49,33 @@ function getDbConnection() {
     }
 
     return $pdo;
+}
+
+// Generate UUID v4 (compatible with PHP 5.x)
+function generateUuid() {
+    // Try to use random_bytes if available (PHP 7+)
+    if (function_exists('random_bytes')) {
+        $data = random_bytes(16);
+    }
+    // Fallback for PHP 5.x
+    elseif (function_exists('openssl_random_pseudo_bytes')) {
+        $data = openssl_random_pseudo_bytes(16);
+    }
+    // Last resort fallback
+    else {
+        $data = '';
+        for ($i = 0; $i < 16; $i++) {
+            $data .= chr(mt_rand(0, 255));
+        }
+    }
+
+    // Set version to 0100
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    // Set bits 6-7 to 10
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+
+    // Output the 36 character UUID
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
 // CORS Headers
