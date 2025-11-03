@@ -77,17 +77,50 @@
         /* Form Section */
         .create-group-section {
             background: rgba(0, 212, 255, 0.1);
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             margin-bottom: 30px;
             border: 1px solid rgba(0, 212, 255, 0.3);
             backdrop-filter: blur(10px);
         }
 
-        .create-group-section h2 {
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header h2 {
             color: #00d4ff;
-            margin-bottom: 20px;
             font-size: 1.8em;
+        }
+
+        .toggle-button {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            color: #00d4ff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-button:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        .form-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .form-container.expanded {
+            max-height: 2000px;
+            margin-top: 20px;
         }
 
         .form-group {
@@ -184,6 +217,59 @@
             font-size: 1.8em;
         }
 
+        /* Filters */
+        .filters-container {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            color: #00d4ff;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .clear-filters-btn {
+            padding: 10px 20px;
+            background: rgba(255, 94, 98, 0.2);
+            border: 1px solid rgba(255, 94, 98, 0.4);
+            color: #ff9999;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .clear-filters-btn:hover {
+            background: rgba(255, 94, 98, 0.3);
+        }
+
+        .results-count {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
         /* Group Cards */
         .groups-container {
             display: grid;
@@ -234,7 +320,19 @@
             border-radius: 15px;
             font-size: 0.85em;
             margin-bottom: 10px;
+            margin-right: 5px;
             border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .group-ship {
+            display: inline-block;
+            background: rgba(255, 153, 0, 0.2);
+            color: #ffaa44;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 153, 0, 0.3);
         }
 
         .group-description {
@@ -331,6 +429,15 @@
             .groups-container {
                 grid-template-columns: 1fr;
             }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -364,94 +471,154 @@
             <a href="https://ko-fi.com/starcitizenteam" target="_blank" rel="noopener noreferrer" class="kofi-button">☕ Support on Ko-Fi</a>
         </header>
 
-        <!-- Create Group Section -->
-        <section class="create-group-section">
-            <h2>Create a New Group</h2>
-            <form id="createGroupForm" novalidate>
-                <div class="form-group">
-                    <label for="creatorHandle">Your Star Citizen Handle *</label>
-                    <input
-                        type="text"
-                        id="creatorHandle"
-                        name="creatorHandle"
-                        required
-                        minlength="3"
-                        maxlength="50"
-                        pattern="[a-zA-Z0-9_-]+"
-                        placeholder="Enter your handle"
-                        autocomplete="off">
-                    <span class="input-hint">3-50 characters, letters, numbers, underscores and dashes only</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="activityType">Activity Type *</label>
-                    <select id="activityType" name="activityType" required>
-                        <option value="">Select an activity</option>
-                        <option value="Bounty Hunting">Bounty Hunting</option>
-                        <option value="Mining">Mining</option>
-                        <option value="Salvaging">Salvaging</option>
-                        <option value="Trading">Trading</option>
-                        <option value="Mercenary">Mercenary</option>
-                        <option value="Investigations">Investigations</option>
-                        <option value="Search and Rescue">Search and Rescue</option>
-                        <option value="Piracy">Piracy</option>
-                        <option value="PVP">PVP</option>
-                        <option value="Exploration">Exploration</option>
-                        <option value="Xenothreat">Xenothreat</option>
-                        <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="groupTitle">Group Title *</label>
-                    <input
-                        type="text"
-                        id="groupTitle"
-                        name="groupTitle"
-                        required
-                        minlength="3"
-                        maxlength="100"
-                        placeholder="e.g., Need 3 for ERT Bounties"
-                        autocomplete="off">
-                    <span class="input-hint">3-100 characters</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        maxlength="500"
-                        placeholder="Describe your mission, requirements, or preferences..."
-                        autocomplete="off"></textarea>
-                    <span class="input-hint">Optional, max 500 characters</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="maxPlayers">Max Players *</label>
-                    <input
-                        type="number"
-                        id="maxPlayers"
-                        name="maxPlayers"
-                        min="2"
-                        max="50"
-                        value="4"
-                        required>
-                    <span class="input-hint">Between 2 and 50 players</span>
-                </div>
-
-                <div class="error-message" id="formError"></div>
-
-                <button type="submit" id="submitButton">Create Group</button>
-            </form>
-        </section>
-
-        <!-- LFG Section -->
+        <!-- LFG Section (Now First) -->
         <section class="lfg-section">
             <h2>Looking for Group (LFG)</h2>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="filterActivity">Activity Type</label>
+                        <select id="filterActivity">
+                            <option value="">All Activities</option>
+                            <option value="Bounty Hunting">Bounty Hunting</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Salvaging">Salvaging</option>
+                            <option value="Trading">Trading</option>
+                            <option value="Mercenary">Mercenary</option>
+                            <option value="Investigations">Investigations</option>
+                            <option value="Search and Rescue">Search and Rescue</option>
+                            <option value="Piracy">Piracy</option>
+                            <option value="PVP">PVP</option>
+                            <option value="Exploration">Exploration</option>
+                            <option value="Xenothreat">Xenothreat</option>
+                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterShip">Ship</label>
+                        <input type="text" id="filterShip" placeholder="e.g., Idris, Carrack, etc." autocomplete="off">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterSearch">Search</label>
+                        <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="clear-filters-btn" id="clearFilters">Clear Filters</button>
+                    <span class="results-count" id="resultsCount"></span>
+                </div>
+            </div>
+
             <div id="groupsContainer" class="groups-container">
                 <div class="loading">Loading groups...</div>
+            </div>
+        </section>
+
+        <!-- Create Group Section (Now Second, Collapsible) -->
+        <section class="create-group-section">
+            <div class="section-header" id="createGroupHeader">
+                <h2>Create a New Group</h2>
+                <button class="toggle-button" id="toggleFormBtn">Expand</button>
+            </div>
+
+            <div class="form-container" id="formContainer">
+                <form id="createGroupForm" novalidate>
+                    <div class="form-group">
+                        <label for="creatorHandle">Your Star Citizen Handle *</label>
+                        <input
+                            type="text"
+                            id="creatorHandle"
+                            name="creatorHandle"
+                            required
+                            minlength="3"
+                            maxlength="50"
+                            pattern="[a-zA-Z0-9_-]+"
+                            placeholder="Enter your handle"
+                            autocomplete="off">
+                        <span class="input-hint">3-50 characters, letters, numbers, underscores and dashes only</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityType">Activity Type *</label>
+                        <select id="activityType" name="activityType" required>
+                            <option value="">Select an activity</option>
+                            <option value="Bounty Hunting">Bounty Hunting</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Salvaging">Salvaging</option>
+                            <option value="Trading">Trading</option>
+                            <option value="Mercenary">Mercenary</option>
+                            <option value="Investigations">Investigations</option>
+                            <option value="Search and Rescue">Search and Rescue</option>
+                            <option value="Piracy">Piracy</option>
+                            <option value="PVP">PVP</option>
+                            <option value="Exploration">Exploration</option>
+                            <option value="Xenothreat">Xenothreat</option>
+                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="groupTitle">Group Title *</label>
+                        <input
+                            type="text"
+                            id="groupTitle"
+                            name="groupTitle"
+                            required
+                            minlength="3"
+                            maxlength="100"
+                            placeholder="e.g., Need 3 for ERT Bounties"
+                            autocomplete="off">
+                        <span class="input-hint">3-100 characters</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            maxlength="500"
+                            placeholder="Describe your mission, requirements, or preferences..."
+                            autocomplete="off"></textarea>
+                        <span class="input-hint">Optional, max 500 characters</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ship">Ship (Optional)</label>
+                        <input
+                            type="text"
+                            id="ship"
+                            name="ship"
+                            minlength="2"
+                            maxlength="50"
+                            placeholder="e.g., Idris, Carrack, Constellation"
+                            autocomplete="off">
+                        <span class="input-hint">Optional, 2-50 characters - specify the main ship for this group</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxPlayers">Max Players *</label>
+                        <input
+                            type="number"
+                            id="maxPlayers"
+                            name="maxPlayers"
+                            min="2"
+                            max="50"
+                            value="4"
+                            required>
+                        <span class="input-hint">Between 2 and 50 players</span>
+                    </div>
+
+                    <div class="error-message" id="formError"></div>
+
+                    <button type="submit" id="submitButton">Create Group</button>
+                </form>
             </div>
         </section>
     </div>
@@ -483,6 +650,10 @@
             DESCRIPTION: {
                 MAX: 500
             },
+            SHIP: {
+                MIN: 2,
+                MAX: 50
+            },
             MAX_PLAYERS: {
                 MIN: 2,
                 MAX: 50
@@ -507,6 +678,92 @@
                 attempts: [],
             }
         };
+
+        // Store all groups for filtering
+        let allGroups = [];
+        let currentFilters = {
+            activity: '',
+            ship: '',
+            search: ''
+        };
+
+        // ============================================
+        // UI FUNCTIONS
+        // ============================================
+
+        /**
+         * Toggle create group form visibility
+         */
+        function toggleCreateForm() {
+            const formContainer = document.getElementById('formContainer');
+            const toggleBtn = document.getElementById('toggleFormBtn');
+
+            if (formContainer.classList.contains('expanded')) {
+                formContainer.classList.remove('expanded');
+                toggleBtn.textContent = 'Expand';
+            } else {
+                formContainer.classList.add('expanded');
+                toggleBtn.textContent = 'Collapse';
+            }
+        }
+
+        /**
+         * Apply filters to groups
+         */
+        function applyFilters() {
+            const activity = currentFilters.activity.toLowerCase();
+            const ship = currentFilters.ship.toLowerCase().trim();
+            const search = currentFilters.search.toLowerCase().trim();
+
+            const filtered = allGroups.filter(group => {
+                // Activity filter
+                if (activity && group.activity_type.toLowerCase() !== activity) {
+                    return false;
+                }
+
+                // Ship filter
+                if (ship && (!group.ship || !group.ship.toLowerCase().includes(ship))) {
+                    return false;
+                }
+
+                // Search filter (title and description)
+                if (search) {
+                    const titleMatch = group.title.toLowerCase().includes(search);
+                    const descMatch = group.description && group.description.toLowerCase().includes(search);
+                    if (!titleMatch && !descMatch) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderGroups(filtered);
+            updateResultsCount(filtered.length, allGroups.length);
+        }
+
+        /**
+         * Clear all filters
+         */
+        function clearFilters() {
+            currentFilters = { activity: '', ship: '', search: '' };
+            document.getElementById('filterActivity').value = '';
+            document.getElementById('filterShip').value = '';
+            document.getElementById('filterSearch').value = '';
+            applyFilters();
+        }
+
+        /**
+         * Update results count display
+         */
+        function updateResultsCount(shown, total) {
+            const resultsCount = document.getElementById('resultsCount');
+            if (shown === total) {
+                resultsCount.textContent = `Showing all ${total} group${total !== 1 ? 's' : ''}`;
+            } else {
+                resultsCount.textContent = `Showing ${shown} of ${total} group${total !== 1 ? 's' : ''}`;
+            }
+        }
 
         // ============================================
         // SECURITY FUNCTIONS
@@ -540,6 +797,17 @@
             if (!description) return true; // Optional field
             if (typeof description !== 'string') return false;
             return description.length <= VALIDATION.DESCRIPTION.MAX;
+        }
+
+        /**
+         * Validates ship name
+         */
+        function validateShip(ship) {
+            if (!ship) return true; // Optional field
+            if (typeof ship !== 'string') return false;
+            const trimmed = ship.trim();
+            if (trimmed.length < VALIDATION.SHIP.MIN || trimmed.length > VALIDATION.SHIP.MAX) return false;
+            return true;
         }
 
         /**
@@ -614,24 +882,42 @@
             }, 5000);
         }
 
-        /**
-         * Debounce function to prevent rapid clicks
-         */
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
         // ============================================
         // CORE FUNCTIONS
         // ============================================
+
+        /**
+         * Renders groups to the DOM
+         */
+        function renderGroups(groups) {
+            const groupsContainer = document.getElementById('groupsContainer');
+
+            if (!groups || groups.length === 0) {
+                groupsContainer.innerHTML = '<div class="no-groups">No groups match your filters. Try adjusting your search! 🔍</div>';
+                return;
+            }
+
+            groupsContainer.innerHTML = groups.map(group => `
+                <div class="group-card" data-group-id="${escapeHtml(group.id)}">
+                    <div class="group-title">${escapeHtml(group.title)}</div>
+                    <span class="group-activity">${escapeHtml(group.activity_type)}</span>
+                    ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
+                    ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
+                    <div class="group-meta">
+                        <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
+                        <span class="creator">by ${escapeHtml(group.creator_handle)}</span>
+                    </div>
+                    <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
+                </div>
+            `).join('');
+
+            // Add event listeners to join buttons
+            document.querySelectorAll('.join-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    handleJoinGroup(this.dataset.groupId);
+                });
+            });
+        }
 
         /**
          * Loads and displays all open groups with member counts
@@ -655,7 +941,9 @@
 
                 // If no groups found
                 if (!groups || groups.length === 0) {
+                    allGroups = [];
                     groupsContainer.innerHTML = '<div class="no-groups">No active groups. Be the first to create one! 🚀</div>';
+                    updateResultsCount(0, 0);
                     return;
                 }
 
@@ -674,26 +962,9 @@
                     return { ...group, memberCount: count || 0 };
                 }));
 
-                // Render groups
-                groupsContainer.innerHTML = groupsWithCounts.map(group => `
-                    <div class="group-card" data-group-id="${escapeHtml(group.id)}">
-                        <div class="group-title">${escapeHtml(group.title)}</div>
-                        <span class="group-activity">${escapeHtml(group.activity_type)}</span>
-                        ${group.description ? `<div class="group-description">${escapeHtml(group.description)}</div>` : ''}
-                        <div class="group-meta">
-                            <span class="player-count">👥 ${parseInt(group.memberCount)}/${parseInt(group.max_players)}</span>
-                            <span class="creator">by ${escapeHtml(group.creator_handle)}</span>
-                        </div>
-                        <button class="join-button" data-group-id="${escapeHtml(group.id)}">Join Group</button>
-                    </div>
-                `).join('');
-
-                // Add event listeners to join buttons
-                document.querySelectorAll('.join-button').forEach(button => {
-                    button.addEventListener('click', function() {
-                        handleJoinGroup(this.dataset.groupId);
-                    });
-                });
+                // Store all groups and apply filters
+                allGroups = groupsWithCounts;
+                applyFilters();
 
             } catch (error) {
                 console.error('Error loading groups:', error);
@@ -726,6 +997,7 @@
                 const activityType = formData.get('activityType');
                 const groupTitle = sanitizeInput(formData.get('groupTitle'));
                 const description = sanitizeInput(formData.get('description'));
+                const ship = sanitizeInput(formData.get('ship'));
                 const maxPlayers = formData.get('maxPlayers');
 
                 // Validate all inputs
@@ -749,6 +1021,11 @@
                     return;
                 }
 
+                if (!validateShip(ship)) {
+                    showError('Ship name must be between 2 and 50 characters if provided.');
+                    return;
+                }
+
                 if (!validateMaxPlayers(maxPlayers)) {
                     showError('Max players must be between 2 and 50.');
                     return;
@@ -764,6 +1041,7 @@
                     activity_type: activityType,
                     title: groupTitle,
                     description: description || null,
+                    ship: ship || null,
                     max_players: parseInt(maxPlayers),
                     status: 'open',
                     expires_at: expiresAt.toISOString()
@@ -798,6 +1076,13 @@
                 // Reset form and reload groups
                 form.reset();
                 alert('Group created successfully! 🚀');
+
+                // Collapse the form after successful creation
+                const formContainer = document.getElementById('formContainer');
+                const toggleBtn = document.getElementById('toggleFormBtn');
+                formContainer.classList.remove('expanded');
+                toggleBtn.textContent = 'Expand';
+
                 await loadGroups();
 
             } catch (error) {
@@ -990,9 +1275,31 @@
             // Initial load
             loadGroups();
 
-            // Set up form submission with debouncing
+            // Set up form submission
             const form = document.getElementById('createGroupForm');
             form.addEventListener('submit', createGroup);
+
+            // Set up toggle button for create form
+            const createGroupHeader = document.getElementById('createGroupHeader');
+            createGroupHeader.addEventListener('click', toggleCreateForm);
+
+            // Set up filter listeners
+            document.getElementById('filterActivity').addEventListener('change', (e) => {
+                currentFilters.activity = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('filterShip').addEventListener('input', (e) => {
+                currentFilters.ship = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('filterSearch').addEventListener('input', (e) => {
+                currentFilters.search = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
             // Check for expired groups every 60 seconds
             setInterval(checkExpiredGroups, 60000);

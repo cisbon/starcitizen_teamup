@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS starcitizen_teamup_groups (
   activity_type TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
+  ship TEXT,
   max_players INTEGER NOT NULL DEFAULT 4,
   status TEXT NOT NULL DEFAULT 'open',
   expires_at TIMESTAMPTZ NOT NULL,
@@ -46,6 +47,9 @@ CREATE TABLE IF NOT EXISTS starcitizen_teamup_groups (
   ),
   CONSTRAINT valid_description CHECK (
     description IS NULL OR LENGTH(description) <= 500
+  ),
+  CONSTRAINT valid_ship CHECK (
+    ship IS NULL OR (LENGTH(ship) >= 2 AND LENGTH(ship) <= 50)
   ),
   CONSTRAINT valid_max_players CHECK (
     max_players >= 2 AND max_players <= 50
@@ -88,6 +92,14 @@ CREATE INDEX IF NOT EXISTS idx_groups_status_created
 -- Index on expires_at for cleanup operations
 CREATE INDEX IF NOT EXISTS idx_groups_expires
   ON starcitizen_teamup_groups(expires_at);
+
+-- Index on activity_type for filtering
+CREATE INDEX IF NOT EXISTS idx_groups_activity_type
+  ON starcitizen_teamup_groups(activity_type);
+
+-- Index on ship for filtering
+CREATE INDEX IF NOT EXISTS idx_groups_ship
+  ON starcitizen_teamup_groups(ship) WHERE ship IS NOT NULL;
 
 -- Index on group_id for member lookups
 CREATE INDEX IF NOT EXISTS idx_members_group_id
