@@ -32,7 +32,7 @@ try {
 
     // Get group info
     $stmt = $pdo->prepare("
-        SELECT id, creator_handle, title, activity_type, ship, max_players, status, created_at
+        SELECT id, creator_handle, title, activity_type, ship, discord_invite, max_players, status, created_at
         FROM starcitizen_teamup_groups
         WHERE id = ?
     ");

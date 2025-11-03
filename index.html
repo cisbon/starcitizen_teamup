@@ -2629,6 +2629,16 @@
                             }
                             return '';
                         })()}
+                        ${memberData.group.discord_invite ? `
+                            <div style="padding: 12px; margin: 10px 0; background: rgba(88, 101, 242, 0.1); border: 1px solid rgba(88, 101, 242, 0.3); border-radius: 8px; text-align: center;">
+                                <span style="color: #999; font-size: 0.9em; display: block; margin-bottom: 6px;">Discord Server:</span>
+                                <a href="${escapeHtml(memberData.group.discord_invite)}" target="_blank" rel="noopener noreferrer" style="color: #5865f2; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(88, 101, 242, 0.2); border-radius: 6px; transition: all 0.2s;">
+                                    <span style="font-size: 1.2em;">💬</span>
+                                    <span>Join Discord</span>
+                                    <span style="font-size: 0.9em;">↗</span>
+                                </a>
+                            </div>
+                        ` : ''}
                         <button class="delete-group-btn" onclick="deleteGroup('${escapeHtml(group.id)}', '${escapeHtml(memberData.group.creator_handle)}')">🗑️ Delete Group</button>
                     </div>
                 `;
@@ -2786,6 +2796,16 @@
                             }
                             return '';
                         })()}
+                        ${memberData.group.discord_invite ? `
+                            <div style="padding: 12px; margin: 10px 0; background: rgba(88, 101, 242, 0.1); border: 1px solid rgba(88, 101, 242, 0.3); border-radius: 8px; text-align: center;">
+                                <span style="color: #999; font-size: 0.9em; display: block; margin-bottom: 6px;">Discord Server:</span>
+                                <a href="${escapeHtml(memberData.group.discord_invite)}" target="_blank" rel="noopener noreferrer" style="color: #5865f2; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(88, 101, 242, 0.2); border-radius: 6px; transition: all 0.2s;">
+                                    <span style="font-size: 1.2em;">💬</span>
+                                    <span>Join Discord</span>
+                                    <span style="font-size: 0.9em;">↗</span>
+                                </a>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }));
