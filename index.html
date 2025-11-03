@@ -107,6 +107,29 @@
             transform: translateY(-2px);
         }
 
+        /* Settings Button */
+        #settingsButton {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(173, 211, 235, 0.2);
+            border: 1px solid rgba(173, 211, 235, 0.4);
+            color: #add3eb;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: none;
+        }
+
+        #settingsButton:hover {
+            background: rgba(173, 211, 235, 0.3);
+            box-shadow: 0 0 15px rgba(173, 211, 235, 0.4);
+            transform: scale(1.05);
+        }
+
         .support-button.referral {
             background: linear-gradient(135deg, #6bb6ff 0%, #4a9eff 100%);
             border-color: #6bb6ff;
@@ -1149,6 +1172,9 @@
 </head>
 <body>
     <div class="container">
+        <!-- Settings Button (Only visible when handle is stored) -->
+        <button id="settingsButton" onclick="showSettingsModal()" title="Manage Player Handle">⚙️</button>
+
         <!-- Header -->
         <header>
             <h1>Star Citizen Team</h1>
@@ -1426,6 +1452,49 @@
         </div>
     </div>
 
+    <!-- Settings Popup -->
+    <div class="popup-overlay" id="settingsPopup" onclick="if(event.target===this) this.classList.remove('show');">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>⚙️ Player Handle Settings</h3>
+                <button class="popup-close" onclick="closeSettingsModal();">&times;</button>
+            </div>
+            <div class="popup-body">
+                <p style="color: #999; margin-bottom: 20px;">
+                    Your current player handle is stored locally and used for group management.
+                </p>
+
+                <div class="form-group">
+                    <label for="settingsHandleInput" style="color: #add3eb;">Current Handle</label>
+                    <input
+                        type="text"
+                        id="settingsHandleInput"
+                        placeholder="Enter your handle"
+                        minlength="3"
+                        maxlength="50"
+                        autocomplete="off"
+                        style="width: 100%; padding: 12px; background: rgba(15, 44, 62, 0.6); border: 1px solid #2a4a5e; color: #e0e0e0; font-family: inherit;">
+                    <span class="input-hint">3-50 characters, letters, numbers, underscores and dashes only</span>
+                </div>
+
+                <div id="settingsError" style="color: #ff6464; margin-top: 10px; display: none;"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="updatePlayerHandle()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #add3eb 0%, #8ab3d1 100%); border: 1px solid #add3eb; color: #0f2c3e; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                        Update Handle
+                    </button>
+                    <button onclick="deletePlayerHandle()" style="flex: 1; padding: 12px; background: rgba(255, 100, 100, 0.2); border: 1px solid #ff6464; color: #ff6464; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                        Delete Handle
+                    </button>
+                </div>
+
+                <p style="color: #999; font-size: 0.85em; margin-top: 15px; text-align: center;">
+                    Note: Deleting your handle will prompt you to enter it again next time.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // API CONFIGURATION
@@ -1614,6 +1683,14 @@
 
         function showHandleInputModal(title = 'Enter Your Star Citizen Handle') {
             return new Promise((resolve, reject) => {
+                // Check if handle is already stored in localStorage
+                const storedHandle = getStoredPlayerHandle();
+                if (storedHandle) {
+                    // Skip modal, return stored handle immediately
+                    resolve(storedHandle);
+                    return;
+                }
+
                 handleInputResolve = resolve;
                 handleInputReject = reject;
 
@@ -1659,6 +1736,9 @@
                 return;
             }
 
+            // Save to localStorage for future use
+            setStoredPlayerHandle(sanitized);
+
             closeHandleInputModal(sanitized);
         }
 
@@ -1682,6 +1762,66 @@
                     handleInputReject = null;
                 }
             }
+        }
+
+        // ============================================
+        // SETTINGS MODAL FUNCTIONS
+        // ============================================
+
+        function showSettingsModal() {
+            const modal = document.getElementById('settingsPopup');
+            const input = document.getElementById('settingsHandleInput');
+            const error = document.getElementById('settingsError');
+
+            // Pre-fill with current handle
+            const currentHandle = getStoredPlayerHandle();
+            input.value = currentHandle || '';
+
+            // Clear error
+            error.style.display = 'none';
+            error.textContent = '';
+
+            modal.classList.add('show');
+
+            // Focus input after modal is shown
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsPopup');
+            modal.classList.remove('show');
+        }
+
+        function updatePlayerHandle() {
+            const input = document.getElementById('settingsHandleInput');
+            const error = document.getElementById('settingsError');
+            const sanitized = sanitizeInput(input.value);
+
+            if (!validateHandle(sanitized)) {
+                error.textContent = 'Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.';
+                error.style.display = 'block';
+                return;
+            }
+
+            // Save the new handle
+            setStoredPlayerHandle(sanitized);
+
+            // Show success notification and close modal
+            showNotification('Handle Updated', `Your player handle has been updated to: ${sanitized}`);
+            closeSettingsModal();
+        }
+
+        function deletePlayerHandle() {
+            if (!confirm('Are you sure you want to delete your stored player handle? You will be asked to enter it again next time.')) {
+                return;
+            }
+
+            // Clear the handle from localStorage
+            clearStoredPlayerHandle();
+
+            // Show notification and close modal
+            showNotification('Handle Deleted', 'Your player handle has been deleted. You will be prompted to enter it again when needed.');
+            closeSettingsModal();
         }
 
         // ============================================
@@ -2217,7 +2357,8 @@
             MY_GROUPS: 'sc_teamup_my_groups',
             JOINED_GROUPS: 'sc_teamup_joined_groups',
             LAST_MEMBER_COUNTS: 'sc_teamup_member_counts',
-            NOTIFICATIONS: 'sc_teamup_notifications'
+            NOTIFICATIONS: 'sc_teamup_notifications',
+            PLAYER_HANDLE: 'sc_teamup_player_handle'
         };
 
         // Get data from localStorage
@@ -2237,6 +2378,41 @@
                 localStorage.setItem(key, JSON.stringify(data));
             } catch (e) {
                 console.error('Error writing to localStorage:', e);
+            }
+        }
+
+        // Player handle management
+        function getStoredPlayerHandle() {
+            try {
+                return localStorage.getItem(STORAGE_KEYS.PLAYER_HANDLE);
+            } catch (e) {
+                console.error('Error reading player handle from localStorage:', e);
+                return null;
+            }
+        }
+
+        function setStoredPlayerHandle(handle) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.PLAYER_HANDLE, handle);
+                updateSettingsButtonVisibility();
+            } catch (e) {
+                console.error('Error storing player handle:', e);
+            }
+        }
+
+        function clearStoredPlayerHandle() {
+            try {
+                localStorage.removeItem(STORAGE_KEYS.PLAYER_HANDLE);
+                updateSettingsButtonVisibility();
+            } catch (e) {
+                console.error('Error clearing player handle:', e);
+            }
+        }
+
+        function updateSettingsButtonVisibility() {
+            const settingsBtn = document.getElementById('settingsButton');
+            if (settingsBtn) {
+                settingsBtn.style.display = getStoredPlayerHandle() ? 'block' : 'none';
             }
         }
 
@@ -2833,6 +3009,9 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // Load activity types from database
             await loadActivityTypes();
+
+            // Initialize settings button visibility
+            updateSettingsButtonVisibility();
 
             // Initialize
             loadGroups();
