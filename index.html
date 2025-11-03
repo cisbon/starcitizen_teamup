@@ -243,6 +243,12 @@
             color: #00d4ff;
         }
 
+        .filter-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            accent-color: #00d4ff;
+        }
+
         .filter-actions {
             display: flex;
             gap: 10px;
@@ -471,11 +477,67 @@
             <a href="https://ko-fi.com/starcitizenteam" target="_blank" rel="noopener noreferrer" class="kofi-button">☕ Support on Ko-Fi</a>
         </header>
 
-         <!-- Create Group Section (Now Second, Collapsible) -->
+        <!-- LFG Section (Now First) -->
+        <section class="lfg-section">
+            <h2>Looking for Group (LFG)</h2>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="filterActivity">Activity Type</label>
+                        <select id="filterActivity">
+                            <option value="">All Activities</option>
+                            <option value="Bounty Hunting">Bounty Hunting</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Salvaging">Salvaging</option>
+                            <option value="Trading">Trading</option>
+                            <option value="Mercenary">Mercenary</option>
+                            <option value="Investigations">Investigations</option>
+                            <option value="Search and Rescue">Search and Rescue</option>
+                            <option value="Piracy">Piracy</option>
+                            <option value="PVP">PVP</option>
+                            <option value="Exploration">Exploration</option>
+                            <option value="Xenothreat">Xenothreat</option>
+                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterShip">Ship</label>
+                        <input type="text" id="filterShip" placeholder="e.g., Idris, Carrack, etc." autocomplete="off">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filterSearch">Search</label>
+                        <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
+                    </div>
+
+                    <div class="filter-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="filterHasSpace" checked style="width: auto; cursor: pointer;">
+                            <span>Show only groups with space</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="clear-filters-btn" id="clearFilters">Clear Filters</button>
+                    <span class="results-count" id="resultsCount"></span>
+                </div>
+            </div>
+
+            <div id="groupsContainer" class="groups-container">
+                <div class="loading">Loading groups...</div>
+            </div>
+        </section>
+
+        <!-- Create Group Section (Now Second, Collapsible) -->
         <section class="create-group-section">
             <div class="section-header" id="createGroupHeader">
                 <h2>Create a New Group (LFM)</h2>
-                <button class="toggle-button" id="toggleFormBtn">Expand</button>
+                <button type="button" class="toggle-button" id="toggleFormBtn">Expand</button>
             </div>
 
             <div class="form-container" id="formContainer">
@@ -572,55 +634,6 @@
                 </form>
             </div>
         </section>
-
-        <!-- LFG Section  -->
-        <section class="lfg-section">
-            <h2>Looking for Group (LFG)</h2>
-
-            <!-- Filters -->
-            <div class="filters-container">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="filterActivity">Activity Type</label>
-                        <select id="filterActivity">
-                            <option value="">All Activities</option>
-                            <option value="Bounty Hunting">Bounty Hunting</option>
-                            <option value="Mining">Mining</option>
-                            <option value="Salvaging">Salvaging</option>
-                            <option value="Trading">Trading</option>
-                            <option value="Mercenary">Mercenary</option>
-                            <option value="Investigations">Investigations</option>
-                            <option value="Search and Rescue">Search and Rescue</option>
-                            <option value="Piracy">Piracy</option>
-                            <option value="PVP">PVP</option>
-                            <option value="Exploration">Exploration</option>
-                            <option value="Xenothreat">Xenothreat</option>
-                            <option value="Nine Tails Lockdown">Nine Tails Lockdown</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="filterShip">Ship</label>
-                        <input type="text" id="filterShip" placeholder="e.g., Idris, Carrack, etc." autocomplete="off">
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="filterSearch">Search</label>
-                        <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="filter-actions">
-                    <button class="clear-filters-btn" id="clearFilters">Clear Filters</button>
-                    <span class="results-count" id="resultsCount"></span>
-                </div>
-            </div>
-
-            <div id="groupsContainer" class="groups-container">
-                <div class="loading">Loading groups...</div>
-            </div>
-        </section>
     </div>
 
     <script>
@@ -684,7 +697,8 @@
         let currentFilters = {
             activity: '',
             ship: '',
-            search: ''
+            search: '',
+            hasSpace: true
         };
 
         // ============================================
@@ -694,7 +708,12 @@
         /**
          * Toggle create group form visibility
          */
-        function toggleCreateForm() {
+        function toggleCreateForm(event) {
+            // Prevent double-toggle if clicking the button inside the header
+            if (event && event.target.id === 'toggleFormBtn') {
+                event.stopPropagation();
+            }
+
             const formContainer = document.getElementById('formContainer');
             const toggleBtn = document.getElementById('toggleFormBtn');
 
@@ -714,6 +733,7 @@
             const activity = currentFilters.activity.toLowerCase();
             const ship = currentFilters.ship.toLowerCase().trim();
             const search = currentFilters.search.toLowerCase().trim();
+            const hasSpace = currentFilters.hasSpace;
 
             const filtered = allGroups.filter(group => {
                 // Activity filter
@@ -735,6 +755,11 @@
                     }
                 }
 
+                // Has space filter (show only groups that aren't full)
+                if (hasSpace && group.memberCount >= group.max_players) {
+                    return false;
+                }
+
                 return true;
             });
 
@@ -746,10 +771,11 @@
          * Clear all filters
          */
         function clearFilters() {
-            currentFilters = { activity: '', ship: '', search: '' };
+            currentFilters = { activity: '', ship: '', search: '', hasSpace: true };
             document.getElementById('filterActivity').value = '';
             document.getElementById('filterShip').value = '';
             document.getElementById('filterSearch').value = '';
+            document.getElementById('filterHasSpace').checked = true;
             applyFilters();
         }
 
@@ -1299,7 +1325,15 @@
                 applyFilters();
             });
 
+            document.getElementById('filterHasSpace').addEventListener('change', (e) => {
+                currentFilters.hasSpace = e.target.checked;
+                applyFilters();
+            });
+
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+            // Add toggle button click handler (in addition to header click)
+            document.getElementById('toggleFormBtn').addEventListener('click', toggleCreateForm);
 
             // Check for expired groups every 60 seconds
             setInterval(checkExpiredGroups, 60000);
