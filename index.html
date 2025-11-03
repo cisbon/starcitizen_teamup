@@ -1244,6 +1244,18 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="discordInvite">Discord Server Invite (Optional)</label>
+                            <input
+                                type="text"
+                                id="discordInvite"
+                                name="discordInvite"
+                                maxlength="255"
+                                placeholder="e.g., https://discord.gg/yourserver"
+                                autocomplete="off">
+                            <span class="input-hint">Optional - share your Discord server with group members</span>
+                        </div>
+
+                        <div class="form-group">
                             <label for="maxPlayers">Max Players *</label>
                             <input
                                 type="number"
@@ -1974,6 +1986,7 @@
                 const groupTitle = sanitizeInput(formData.get('groupTitle'));
                 const description = sanitizeInput(formData.get('description'));
                 const ship = sanitizeInput(formData.get('ship'));
+                const discordInvite = sanitizeInput(formData.get('discordInvite'));
                 const maxPlayers = formData.get('maxPlayers');
 
                 if (!validateHandle(creatorHandle)) {
@@ -2012,6 +2025,7 @@
                     title: groupTitle,
                     description: description || '',
                     ship: ship || '',
+                    discord_invite: discordInvite || '',
                     max_players: parseInt(maxPlayers)
                 };
 
