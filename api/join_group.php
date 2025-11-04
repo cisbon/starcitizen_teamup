@@ -146,7 +146,7 @@ try {
 
         if ($isFull) {
             // Mark group as full and extend expiry
-            $newExpiresAt = date('Y-m-d H:i:s', strtotime('+120 minutes'));
+            $newExpiresAt = date('Y-m-d H:i:s', strtotime('+2 hours'));
             $stmt = $pdo->prepare("
                 UPDATE starcitizen_teamup_groups
                 SET status = 'full', expires_at = ?
