@@ -325,6 +325,20 @@
             box-shadow: 0 0 10px rgba(173, 211, 235, 0.2);
         }
 
+        input.input-error,
+        select.input-error,
+        textarea.input-error {
+            border-color: #ff6464;
+            background: rgba(255, 100, 100, 0.1);
+        }
+
+        input.input-error:focus,
+        select.input-error:focus,
+        textarea.input-error:focus {
+            border-color: #ff6464;
+            box-shadow: 0 0 10px rgba(255, 100, 100, 0.3);
+        }
+
         textarea {
             resize: vertical;
             min-height: 100px;
@@ -1786,13 +1800,37 @@
             return String(text).replace(/[&<>"'/]/g, m => map[m]);
         }
 
-        function showError(message) {
+        function showError(message, fieldId = null) {
             const errorDiv = document.getElementById('formError');
             errorDiv.textContent = message;
             errorDiv.classList.add('show');
             setTimeout(() => {
                 errorDiv.classList.remove('show');
             }, 5000);
+
+            // Mark the field as invalid if provided
+            if (fieldId) {
+                markFieldAsInvalid(fieldId);
+            }
+        }
+
+        function markFieldAsInvalid(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.add('input-error');
+            }
+        }
+
+        function clearFieldError(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.remove('input-error');
+            }
+        }
+
+        function clearAllFieldErrors() {
+            const errorFields = document.querySelectorAll('.input-error');
+            errorFields.forEach(field => field.classList.remove('input-error'));
         }
 
         // ============================================
@@ -2271,6 +2309,9 @@
             const submitButton = document.getElementById('submitButton');
             submitButton.disabled = true;
 
+            // Clear all field errors before validation
+            clearAllFieldErrors();
+
             try {
                 const form = event.target;
                 const formData = new FormData(form);
@@ -2284,37 +2325,37 @@
                 const maxPlayers = formData.get('maxPlayers');
 
                 if (!validateHandle(creatorHandle)) {
-                    showError('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.');
+                    showError('Invalid handle. Must be 3-50 characters, letters, numbers, underscores and dashes only.', 'creatorHandle');
                     return;
                 }
 
                 if (!validateActivityType(activityType)) {
-                    showError('Please select a valid activity type.');
+                    showError('Please select a valid activity type.', 'activityType');
                     return;
                 }
 
                 if (!validateMaxPlayers(maxPlayers)) {
-                    showError('Max players must be between 2 and 50.');
+                    showError('Max players must be between 2 and 50.', 'maxPlayers');
                     return;
                 }
 
                 if (!validateTitle(groupTitle)) {
-                    showError('Title must be between 3 and 100 characters if provided.');
+                    showError('Title must be between 3 and 100 characters if provided.', 'groupTitle');
                     return;
                 }
 
                 if (!validateDescription(description)) {
-                    showError('Description must be 500 characters or less.');
+                    showError('Description must be 500 characters or less.', 'description');
                     return;
                 }
 
                 if (!validateShip(ship)) {
-                    showError('Ship name must be between 2 and 50 characters if provided.');
+                    showError('Ship name must be between 2 and 50 characters if provided.', 'ship');
                     return;
                 }
 
                 if (!validateDiscordUrl(discordInvite)) {
-                    showError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).');
+                    showError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).', 'discordInvite');
                     return;
                 }
 
@@ -2356,8 +2397,20 @@
                     max_players: maxPlayers
                 });
 
+                // Store player handle in localStorage for future use
+                setStoredPlayerHandle(creatorHandle);
+
                 form.reset();
                 alert('Group created successfully! 🚀');
+
+                // Re-fill creator handle from localStorage after reset
+                const storedHandle = getStoredPlayerHandle();
+                if (storedHandle) {
+                    const creatorHandleInput = document.getElementById('creatorHandle');
+                    if (creatorHandleInput) {
+                        creatorHandleInput.value = storedHandle;
+                    }
+                }
 
                 // Collapse the form after successful creation
                 const formContainer = document.getElementById('formContainer');
@@ -3201,6 +3254,16 @@
                     creatorHandleInput.value = storedHandle;
                 }
             }
+
+            // Add event listeners to clear error states when user types
+            const formFields = ['creatorHandle', 'activityType', 'groupTitle', 'description', 'ship', 'discordInvite', 'maxPlayers'];
+            formFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', () => clearFieldError(fieldId));
+                    field.addEventListener('change', () => clearFieldError(fieldId));
+                }
+            });
 
             // Set up filter listeners
             document.getElementById('filterActivity').addEventListener('change', (e) => {
