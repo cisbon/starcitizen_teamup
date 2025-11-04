@@ -916,6 +916,25 @@
             margin-left: 8px;
         }
 
+        .edit-group-btn {
+            background: rgba(107, 182, 255, 0.2);
+            border: 1px solid #6bb6ff;
+            color: #6bb6ff;
+            padding: 6px 14px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .edit-group-btn:hover {
+            background: rgba(107, 182, 255, 0.4);
+            box-shadow: 0 0 10px rgba(107, 182, 255, 0.3);
+        }
+
         .delete-group-btn {
             background: rgba(255, 100, 100, 0.3);
             border-color: #ff6464;
@@ -1598,6 +1617,107 @@
         </div>
     </div>
 
+    <!-- Edit Group Popup -->
+    <div class="popup-overlay" id="editGroupPopup" onclick="if(event.target===this) closeEditGroupModal();">
+        <div class="popup-content" style="max-width: 600px;">
+            <div class="popup-header">
+                <h3>✏️ Edit Group</h3>
+                <button class="popup-close" onclick="closeEditGroupModal();">&times;</button>
+            </div>
+            <div class="popup-body">
+                <form id="editGroupForm" onsubmit="updateGroup(event); return false;">
+                    <input type="hidden" id="editGroupId" name="group_id">
+                    <input type="hidden" id="editCreatorHandle" name="creator_handle">
+
+                    <div class="form-group">
+                        <label for="editActivityType">Activity Type *</label>
+                        <select id="editActivityType" name="activity_type" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editGroupTitle">Group Title</label>
+                        <input
+                            type="text"
+                            id="editGroupTitle"
+                            name="title"
+                            minlength="3"
+                            maxlength="100"
+                            placeholder="Leave empty to use default title"
+                            autocomplete="off">
+                        <span class="input-hint">Optional, 3-100 characters - defaults to "[Activity] Group"</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDescription">Description</label>
+                        <textarea
+                            id="editDescription"
+                            name="description"
+                            maxlength="500"
+                            placeholder="Add details about your group..."
+                            autocomplete="off"></textarea>
+                        <span class="input-hint">Optional, max 500 characters</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editShip">Ship</label>
+                        <input
+                            type="text"
+                            id="editShip"
+                            name="ship"
+                            minlength="2"
+                            maxlength="50"
+                            placeholder="e.g., Constellation, Cutlass, etc."
+                            autocomplete="off">
+                        <span class="input-hint">Optional, 2-50 characters - specify the main ship for this group</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDiscordInvite">Discord Server Invite</label>
+                        <input
+                            type="url"
+                            id="editDiscordInvite"
+                            name="discord_invite"
+                            maxlength="255"
+                            placeholder="e.g., https://discord.gg/yourserver"
+                            autocomplete="off">
+                        <span class="input-hint">Optional - must be a valid URL (e.g., https://discord.gg/...)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editMaxPlayers">Max Players *</label>
+                        <div class="number-input-container">
+                            <button type="button" class="number-btn" onclick="decrementEditMaxPlayers()">−</button>
+                            <input
+                                type="number"
+                                id="editMaxPlayers"
+                                name="max_players"
+                                min="2"
+                                max="50"
+                                value="4"
+                                required
+                                onchange="validateEditMaxPlayersInput()">
+                            <button type="button" class="number-btn" onclick="incrementEditMaxPlayers()">+</button>
+                        </div>
+                        <span class="input-hint">2-50 players (cannot be less than current member count)</span>
+                    </div>
+
+                    <div class="error-message" id="editFormError"></div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" id="editSubmitButton" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #add3eb 0%, #8ab3d1 100%); border: 1px solid #add3eb; color: #0f2c3e; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                            Update Group
+                        </button>
+                        <button type="button" onclick="closeEditGroupModal()" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid #666; color: #999; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // API CONFIGURATION
@@ -1981,6 +2101,208 @@
             // Show notification and close modal
             showNotification('Handle Deleted', 'Your player handle has been deleted. You will be prompted to enter it again when needed.');
             closeSettingsModal();
+        }
+
+        // ============================================
+        // EDIT GROUP MODAL
+        // ============================================
+
+        async function openEditGroupModal(groupId) {
+            // Fetch current group data
+            const memberData = await fetchGroupMembers(groupId);
+            if (!memberData || !memberData.group) {
+                alert('Error loading group data');
+                return;
+            }
+
+            const group = memberData.group;
+            const storedHandle = getStoredPlayerHandle();
+
+            // Verify user is the creator
+            if (group.creator_handle !== storedHandle) {
+                alert('Only the group creator can edit this group');
+                return;
+            }
+
+            // Populate form
+            document.getElementById('editGroupId').value = group.id;
+            document.getElementById('editCreatorHandle').value = group.creator_handle;
+
+            // Populate activity type dropdown
+            const activitySelect = document.getElementById('editActivityType');
+            activitySelect.innerHTML = activityTypes.map(type =>
+                `<option value="${escapeHtml(type.name)}" ${type.name === group.activity_type ? 'selected' : ''}>${escapeHtml(type.name)}</option>`
+            ).join('');
+
+            document.getElementById('editGroupTitle').value = group.title || '';
+            document.getElementById('editDescription').value = group.description || '';
+            document.getElementById('editShip').value = group.ship || '';
+            document.getElementById('editDiscordInvite').value = group.discord_invite || '';
+            document.getElementById('editMaxPlayers').value = group.max_players;
+
+            // Show modal
+            const modal = document.getElementById('editGroupPopup');
+            modal.classList.add('show');
+        }
+
+        function closeEditGroupModal() {
+            const modal = document.getElementById('editGroupPopup');
+            modal.classList.remove('show');
+
+            // Clear form
+            document.getElementById('editGroupForm').reset();
+
+            // Clear error
+            const errorDiv = document.getElementById('editFormError');
+            errorDiv.classList.remove('show');
+        }
+
+        function incrementEditMaxPlayers() {
+            const input = document.getElementById('editMaxPlayers');
+            const currentValue = parseInt(input.value) || 4;
+            const newValue = Math.min(currentValue + 1, 50);
+            input.value = newValue;
+        }
+
+        function decrementEditMaxPlayers() {
+            const input = document.getElementById('editMaxPlayers');
+            const currentValue = parseInt(input.value) || 4;
+            const newValue = Math.max(currentValue - 1, 2);
+            input.value = newValue;
+        }
+
+        function validateEditMaxPlayersInput() {
+            const input = document.getElementById('editMaxPlayers');
+            let value = parseInt(input.value);
+
+            if (isNaN(value) || value < 2) {
+                input.value = 2;
+            } else if (value > 50) {
+                input.value = 50;
+            }
+        }
+
+        function showEditError(message) {
+            const errorDiv = document.getElementById('editFormError');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        async function updateGroup(event) {
+            event.preventDefault();
+
+            const submitButton = document.getElementById('editSubmitButton');
+            submitButton.disabled = true;
+
+            try {
+                const form = event.target;
+                const formData = new FormData(form);
+
+                const groupId = formData.get('group_id');
+                const creatorHandle = formData.get('creator_handle');
+                const activityType = formData.get('activity_type');
+                const groupTitle = sanitizeInput(formData.get('title'));
+                const description = sanitizeInput(formData.get('description'));
+                const ship = sanitizeInput(formData.get('ship'));
+                const discordInvite = sanitizeInput(formData.get('discord_invite'));
+                const maxPlayers = formData.get('max_players');
+
+                // Validate inputs (same as create)
+                if (!validateActivityType(activityType)) {
+                    showEditError('Please select a valid activity type.');
+                    return;
+                }
+
+                if (!validateMaxPlayers(maxPlayers)) {
+                    showEditError('Max players must be between 2 and 50.');
+                    return;
+                }
+
+                if (groupTitle && !validateTitle(groupTitle)) {
+                    showEditError('Title must be between 3 and 100 characters if provided.');
+                    return;
+                }
+
+                if (!validateDescription(description)) {
+                    showEditError('Description must be 500 characters or less.');
+                    return;
+                }
+
+                if (!validateShip(ship)) {
+                    showEditError('Ship name must be between 2 and 50 characters if provided.');
+                    return;
+                }
+
+                if (!validateDiscordUrl(discordInvite)) {
+                    showEditError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).');
+                    return;
+                }
+
+                // Generate default title if none provided
+                const finalTitle = groupTitle && groupTitle.trim()
+                    ? groupTitle.trim()
+                    : `${activityType} Group`;
+
+                const updateData = {
+                    group_id: groupId,
+                    creator_handle: creatorHandle,
+                    activity_type: activityType,
+                    title: finalTitle,
+                    description: description || '',
+                    ship: ship || '',
+                    discord_invite: discordInvite || '',
+                    max_players: parseInt(maxPlayers)
+                };
+
+                console.log('Updating group with data:', updateData);
+
+                const response = await fetch(`${API_BASE_URL}/update_group.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const data = await response.json();
+
+                console.log('Update response:', data);
+
+                if (!response.ok || !data.success) {
+                    showEditError(data.error || 'Unable to update group. Please try again.');
+                    return;
+                }
+
+                // Update localStorage
+                const myGroups = getLocalStorage(STORAGE_KEYS.MY_GROUPS);
+                const groupIndex = myGroups.findIndex(g => g.id === groupId);
+                if (groupIndex !== -1) {
+                    myGroups[groupIndex] = {
+                        ...myGroups[groupIndex],
+                        title: finalTitle,
+                        activity_type: activityType,
+                        ship: ship,
+                        max_players: parseInt(maxPlayers)
+                    };
+                    setLocalStorage(STORAGE_KEYS.MY_GROUPS, myGroups);
+                }
+
+                closeEditGroupModal();
+                alert('Group updated successfully! All members have been notified. 🚀');
+
+                // Reload groups to show changes
+                await renderMyGroups();
+                await loadGroups();
+
+            } catch (error) {
+                console.error('Error updating group:', error);
+                showEditError('An error occurred. Please try again.');
+            } finally {
+                submitButton.disabled = false;
+            }
         }
 
         // ============================================
@@ -2374,6 +2696,9 @@
                     max_players: parseInt(maxPlayers)
                 };
 
+                console.log('Creating group with data:', groupData);
+                console.log('Discord invite value:', discordInvite);
+
                 const response = await fetch(`${API_BASE_URL}/create_group.php`, {
                     method: 'POST',
                     headers: {
@@ -2383,6 +2708,9 @@
                 });
 
                 const data = await response.json();
+
+                console.log('Server response:', data);
+                console.log('Created group discord_invite:', data.group?.discord_invite);
 
                 if (!response.ok || !data.success) {
                     showError(data.error || 'Unable to create group. Please try again.');
@@ -2978,6 +3306,7 @@
                                 <span class="group-activity">${escapeHtml(group.activity_type)}</span>
                                 ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
                             </div>
+                            <button class="edit-group-btn" onclick="openEditGroupModal('${escapeHtml(group.id)}')">✏️ Edit</button>
                         </div>
                         <div class="group-meta">
                             <span class="player-count">👥 ${memberCount}/${parseInt(group.max_players)}</span>
