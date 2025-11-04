@@ -74,12 +74,38 @@ try {
     // Validate Discord invite (optional)
     $discordInvite = isset($input['discord_invite']) ? trim($input['discord_invite']) : '';
     error_log('Discord invite received: ' . var_export($discordInvite, true));
-    if ($discordInvite !== '' && strlen($discordInvite) > 255) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Discord invite link must be 255 characters or less.']);
-        exit;
-    }
-    if ($discordInvite === '') {
+
+    if ($discordInvite !== '') {
+        // Length check
+        if (strlen($discordInvite) > 255) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Discord invite link must be 255 characters or less.']);
+            exit;
+        }
+
+        // SECURITY: Validate URL and ensure it's only discord.gg domain
+        $parsedUrl = parse_url($discordInvite);
+        if ($parsedUrl === false || !isset($parsedUrl['scheme']) || !isset($parsedUrl['host'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).']);
+            exit;
+        }
+
+        // SECURITY: Must use HTTPS
+        if (strtolower($parsedUrl['scheme']) !== 'https') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Discord invite must use HTTPS protocol.']);
+            exit;
+        }
+
+        // SECURITY: Must be exactly discord.gg domain (prevent phishing)
+        $hostname = strtolower($parsedUrl['host']);
+        if ($hostname !== 'discord.gg') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Discord invite must be from discord.gg domain only. Other domains are not allowed for security reasons.']);
+            exit;
+        }
+    } else {
         $discordInvite = null;
     }
     error_log('Discord invite after processing: ' . var_export($discordInvite, true));
