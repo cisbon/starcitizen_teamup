@@ -1347,7 +1347,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="description">Description</label>
+                            <label for="description">Description (Optional)</label>
                             <textarea
                                 id="description"
                                 name="description"
@@ -2141,7 +2141,7 @@
                 const timer = formatTimeRemaining(group.expires_at);
                 const isFull = parseInt(group.memberCount) >= parseInt(group.max_players);
                 const timerTooltip = isFull
-                    ? 'Full groups are automatically removed after 10 minutes'
+                    ? 'Full groups are automatically removed after 2 hours'
                     : 'Groups are automatically removed after 2 hours of inactivity';
 
                 // Check if user created or joined this group
