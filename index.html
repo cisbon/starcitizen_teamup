@@ -1413,7 +1413,7 @@
                                 maxlength="255"
                                 placeholder="e.g., https://discord.gg/yourserver"
                                 autocomplete="off">
-                            <span class="input-hint">Optional - must be a valid URL (e.g., https://discord.gg/...)</span>
+                            <span class="input-hint">Optional - must be a discord.gg URL (e.g., https://discord.gg/...) - only discord.gg links allowed for security</span>
                         </div>
 
                         <div class="error-message" id="formError"></div>
@@ -1682,7 +1682,7 @@
                             maxlength="255"
                             placeholder="e.g., https://discord.gg/yourserver"
                             autocomplete="off">
-                        <span class="input-hint">Optional - must be a valid URL (e.g., https://discord.gg/...)</span>
+                        <span class="input-hint">Optional - must be a discord.gg URL (e.g., https://discord.gg/...) - only discord.gg links allowed for security</span>
                     </div>
 
                     <div class="form-group">
@@ -1882,10 +1882,18 @@
             // Must be a valid URL
             try {
                 const urlObject = new URL(trimmed);
-                // Must use http or https protocol
-                if (urlObject.protocol !== 'http:' && urlObject.protocol !== 'https:') {
+
+                // SECURITY: Must use https protocol (not http)
+                if (urlObject.protocol !== 'https:') {
                     return false;
                 }
+
+                // SECURITY: Must be exactly discord.gg domain (prevent phishing)
+                const hostname = urlObject.hostname.toLowerCase();
+                if (hostname !== 'discord.gg') {
+                    return false;
+                }
+
                 return true;
             } catch (e) {
                 return false;
@@ -2237,7 +2245,7 @@
                 }
 
                 if (!validateDiscordUrl(discordInvite)) {
-                    showEditError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).');
+                    showEditError('Discord invite must be a valid discord.gg URL (e.g., https://discord.gg/yourserver). Only discord.gg links are allowed for security.');
                     return;
                 }
 
@@ -2677,7 +2685,7 @@
                 }
 
                 if (!validateDiscordUrl(discordInvite)) {
-                    showError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).', 'discordInvite');
+                    showError('Discord invite must be a valid discord.gg URL (e.g., https://discord.gg/yourserver). Only discord.gg links are allowed for security.', 'discordInvite');
                     return;
                 }
 
