@@ -118,16 +118,28 @@
             padding: 10px 15px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1.2em;
+            font-size: 0.95em;
             transition: all 0.3s ease;
             z-index: 999;
             display: none;
+            align-items: center;
+            gap: 10px;
         }
 
         #settingsButton:hover {
             background: rgba(173, 211, 235, 0.3);
             box-shadow: 0 0 15px rgba(173, 211, 235, 0.4);
-            transform: scale(1.05);
+            transform: translateY(-2px);
+        }
+
+        #playerHandleDisplay {
+            color: #cce5f2;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-icon {
+            font-size: 1.5em;
         }
 
         .support-button.referral {
@@ -1286,7 +1298,10 @@
 <body>
     <div class="container">
         <!-- Settings Button (Only visible when handle is stored) -->
-        <button id="settingsButton" onclick="showSettingsModal()" title="Manage Player Handle">⚙️</button>
+        <div id="settingsButton" onclick="showSettingsModal()" title="Manage Player Handle">
+            <span id="playerHandleDisplay"></span>
+            <span class="settings-icon">⚙️</span>
+        </div>
 
         <!-- Header -->
         <header>
@@ -1793,18 +1808,14 @@
                 }
 
                 // When hasSpace is checked: show only groups WITH space (filter out full groups)
-                // When hasSpace is unchecked: show only FULL groups (filter out groups with space)
+                // When hasSpace is unchecked: show ALL groups (no space filtering)
                 if (hasSpace) {
-                    // Show only groups with space available
+                    // Show only groups with space available (filter out full groups)
                     if (group.memberCount >= group.max_players) {
                         return false;
                     }
-                } else {
-                    // Show only full groups
-                    if (group.memberCount < group.max_players) {
-                        return false;
-                    }
                 }
+                // When unchecked, show all groups (no filtering by space)
 
                 return true;
             });
@@ -2964,8 +2975,18 @@
 
         function updateSettingsButtonVisibility() {
             const settingsBtn = document.getElementById('settingsButton');
+            const handleDisplay = document.getElementById('playerHandleDisplay');
+            const storedHandle = getStoredPlayerHandle();
+
             if (settingsBtn) {
-                settingsBtn.style.display = getStoredPlayerHandle() ? 'block' : 'none';
+                if (storedHandle) {
+                    settingsBtn.style.display = 'flex';
+                    if (handleDisplay) {
+                        handleDisplay.textContent = storedHandle;
+                    }
+                } else {
+                    settingsBtn.style.display = 'none';
+                }
             }
         }
 
@@ -3475,17 +3496,17 @@
                     <div class="my-group-card">
                         <div class="my-group-header">
                             <div>
-                                <div class="my-group-title">${escapeHtml(group.title)}</div>
-                                <span class="group-activity">${escapeHtml(group.activity_type)}</span>
-                                ${group.ship ? `<span class="group-ship">🚀 ${escapeHtml(group.ship)}</span>` : ''}
+                                <div class="my-group-title">${escapeHtml(memberData.group.title)}</div>
+                                <span class="group-activity">${escapeHtml(memberData.group.activity_type)}</span>
+                                ${memberData.group.ship ? `<span class="group-ship">🚀 ${escapeHtml(memberData.group.ship)}</span>` : ''}
                             </div>
                             <div>
                                 <button class="leave-group-btn" onclick="leaveGroup('${escapeHtml(group.id)}', '${escapeHtml(group.my_handle)}')">🚪 Leave Group</button>
                             </div>
                         </div>
                         <div class="group-meta">
-                            <span class="player-count">👥 ${members.length}/${parseInt(group.max_players)}</span>
-                            <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(group.creator_handle)}</a></span>
+                            <span class="player-count">👥 ${members.length}/${parseInt(memberData.group.max_players)}</span>
+                            <span class="creator">by <a href="https://robertsspaceindustries.com/citizens/${escapeHtml(memberData.group.creator_handle)}" target="_blank" rel="noopener noreferrer" class="profile-link">${escapeHtml(memberData.group.creator_handle)}</a></span>
                         </div>
                         <div class="members-list">
                             <div class="members-title">Members (${members.length}):</div>
