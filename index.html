@@ -142,6 +142,112 @@
             font-size: 1.5em;
         }
 
+        /* Toast Notification System */
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+            padding: 16px 20px;
+            background: rgba(15, 44, 62, 0.98);
+            border: 1px solid;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            pointer-events: all;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .toast.removing {
+            animation: slideOut 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(21, 128, 61, 0.95) 100%);
+            border-color: #22c55e;
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%);
+            border-color: #ef4444;
+        }
+
+        .toast-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .toast-content {
+            flex: 1;
+            color: #ffffff;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: color 0.2s ease;
+        }
+
+        .toast-close:hover {
+            color: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            #toastContainer {
+                right: 10px;
+                left: 10px;
+                bottom: 10px;
+            }
+
+            .toast {
+                min-width: auto;
+                max-width: none;
+            }
+        }
+
         .support-button.referral {
             background: linear-gradient(135deg, #6bb6ff 0%, #4a9eff 100%);
             border-color: #6bb6ff;
@@ -1296,6 +1402,9 @@
     </style>
 </head>
 <body>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
+
     <div class="container">
         <!-- Settings Button (Only visible when handle is stored) -->
         <div id="settingsButton" onclick="showSettingsModal()" title="Manage Player Handle">
@@ -1931,6 +2040,59 @@
             return String(text).replace(/[&<>"'/]/g, m => map[m]);
         }
 
+        // ============================================
+        // TOAST NOTIFICATION SYSTEM
+        // ============================================
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            // Determine icon based on type
+            const icon = type === 'success' ? '✓' : '✕';
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <div class="toast-content">${escapeHtml(message)}</div>
+                <button class="toast-close" onclick="dismissToast(this)">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after 2 seconds
+            setTimeout(() => {
+                removeToast(toast);
+            }, 2000);
+        }
+
+        function showSuccessToast(message) {
+            showToast(message, 'success');
+        }
+
+        function showErrorToast(message) {
+            showToast(message, 'error');
+        }
+
+        function dismissToast(button) {
+            const toast = button.closest('.toast');
+            if (toast) {
+                removeToast(toast);
+            }
+        }
+
+        function removeToast(toast) {
+            if (!toast || toast.classList.contains('removing')) return;
+
+            toast.classList.add('removing');
+            setTimeout(() => {
+                toast.remove();
+            }, 300); // Match animation duration
+        }
+
         function showError(message, fieldId = null) {
             const errorDiv = document.getElementById('formError');
             errorDiv.textContent = message;
@@ -2122,7 +2284,7 @@
             // Fetch current group data
             const memberData = await fetchGroupMembers(groupId);
             if (!memberData || !memberData.group) {
-                alert('Error loading group data');
+                showErrorToast('Error loading group data');
                 return;
             }
 
@@ -2131,7 +2293,7 @@
 
             // Verify user is the creator
             if (group.creator_handle !== storedHandle) {
-                alert('Only the group creator can edit this group');
+                showErrorToast('Only the group creator can edit this group');
                 return;
             }
 
@@ -2302,7 +2464,7 @@
                 }
 
                 closeEditGroupModal();
-                alert('Group updated successfully! All members have been notified. 🚀');
+                showSuccessToast('Group updated successfully! All members have been notified. 🚀');
 
                 // Reload groups to show changes
                 await renderMyGroups();
@@ -2436,11 +2598,11 @@
                     // Also reload groups to update group ratings
                     await loadGroups();
                 } else {
-                    alert(data.error || 'Failed to rate user');
+                    showErrorToast(data.error || 'Failed to rate user');
                 }
             } catch (error) {
                 console.error('Error rating user:', error);
-                alert('An error occurred. Please try again.');
+                showErrorToast('An error occurred. Please try again.');
             }
         }
 
@@ -2740,7 +2902,7 @@
                 setStoredPlayerHandle(creatorHandle);
 
                 form.reset();
-                alert('Group created successfully! 🚀');
+                showSuccessToast('Group created successfully! 🚀');
 
                 // Re-fill creator handle from localStorage after reset
                 const storedHandle = getStoredPlayerHandle();
@@ -2770,7 +2932,7 @@
         async function handleJoinGroup(groupId) {
             const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (!uuidPattern.test(groupId)) {
-                alert('Invalid group ID.');
+                showErrorToast('Invalid group ID.');
                 return;
             }
 
@@ -2801,7 +2963,7 @@
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    alert(data.error || 'Unable to join group. Please try again.');
+                    showErrorToast(data.error || 'Unable to join group. Please try again.');
                     await loadGroups();
                     return;
                 }
@@ -2819,16 +2981,16 @@
                 }
 
                 if (data.is_full) {
-                    alert('Successfully joined! Group is now full. 🎉');
+                    showSuccessToast('Successfully joined! Group is now full. 🎉');
                 } else {
-                    alert('Successfully joined the group! 🚀');
+                    showSuccessToast('Successfully joined the group! 🚀');
                 }
 
                 await loadGroups();
 
             } catch (error) {
                 console.error('Error joining group:', error);
-                alert('Unable to join group. Please try again.');
+                showErrorToast('Unable to join group. Please try again.');
             } finally {
                 document.querySelectorAll('.join-button').forEach(btn => btn.disabled = false);
             }
@@ -3078,7 +3240,7 @@
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    alert(data.error || 'Failed to remove member');
+                    showErrorToast(data.error || 'Failed to remove member');
                     return false;
                 }
 
@@ -3088,7 +3250,7 @@
                 return true;
             } catch (error) {
                 console.error('Error removing member:', error);
-                alert('Failed to remove member. Please try again.');
+                showErrorToast('Failed to remove member. Please try again.');
                 return false;
             }
         }
@@ -3114,7 +3276,7 @@
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    alert(data.error || 'Failed to delete group');
+                    showErrorToast(data.error || 'Failed to delete group');
                     return false;
                 }
 
@@ -3124,7 +3286,7 @@
                 return true;
             } catch (error) {
                 console.error('Error deleting group:', error);
-                alert('Failed to delete group. Please try again.');
+                showErrorToast('Failed to delete group. Please try again.');
                 return false;
             }
         }
@@ -3150,7 +3312,7 @@
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
-                    alert(data.error || 'Failed to leave group');
+                    showErrorToast(data.error || 'Failed to leave group');
                     return false;
                 }
 
@@ -3160,7 +3322,7 @@
                 return true;
             } catch (error) {
                 console.error('Error leaving group:', error);
-                alert('Failed to leave group. Please try again.');
+                showErrorToast('Failed to leave group. Please try again.');
                 return false;
             }
         }
