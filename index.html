@@ -203,6 +203,61 @@
             margin-bottom: 25px;
         }
 
+        .number-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 200px;
+        }
+
+        .number-btn {
+            flex-shrink: 0;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, rgba(173, 211, 235, 0.2) 0%, rgba(138, 179, 209, 0.2) 100%);
+            border: 1px solid rgba(173, 211, 235, 0.4);
+            color: #add3eb;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .number-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(173, 211, 235, 0.3) 0%, rgba(138, 179, 209, 0.3) 100%);
+            border-color: #add3eb;
+            box-shadow: 0 0 10px rgba(173, 211, 235, 0.3);
+            transform: scale(1.05);
+        }
+
+        .number-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .number-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .number-input-container input[type="number"] {
+            flex: 1;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+            padding: 12px;
+            -moz-appearance: textfield;
+        }
+
+        .number-input-container input[type="number"]::-webkit-outer-spin-button,
+        .number-input-container input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -1283,14 +1338,19 @@
 
                         <div class="form-group">
                             <label for="maxPlayers">Max Players *</label>
-                            <input
-                                type="number"
-                                id="maxPlayers"
-                                name="maxPlayers"
-                                min="2"
-                                max="50"
-                                value="4"
-                                required>
+                            <div class="number-input-container">
+                                <button type="button" class="number-btn" onclick="decrementMaxPlayers()">−</button>
+                                <input
+                                    type="number"
+                                    id="maxPlayers"
+                                    name="maxPlayers"
+                                    min="2"
+                                    max="50"
+                                    value="4"
+                                    required
+                                    oninput="validateMaxPlayersInput()">
+                                <button type="button" class="number-btn" onclick="incrementMaxPlayers()">+</button>
+                            </div>
                             <span class="input-hint">Between 2 and 50 players</span>
                         </div>
 
@@ -1569,8 +1629,18 @@
                     }
                 }
 
-                if (hasSpace && group.memberCount >= group.max_players) {
-                    return false;
+                // When hasSpace is checked: show only groups WITH space (filter out full groups)
+                // When hasSpace is unchecked: show only FULL groups (filter out groups with space)
+                if (hasSpace) {
+                    // Show only groups with space available
+                    if (group.memberCount >= group.max_players) {
+                        return false;
+                    }
+                } else {
+                    // Show only full groups
+                    if (group.memberCount < group.max_players) {
+                        return false;
+                    }
                 }
 
                 return true;
@@ -2110,6 +2180,39 @@
                     '<div class="no-groups">Error loading groups. Please refresh the page.</div>';
             }
         }
+
+        // ============================================
+        // MAX PLAYERS CONTROLS
+        // ============================================
+
+        function incrementMaxPlayers() {
+            const input = document.getElementById('maxPlayers');
+            const currentValue = parseInt(input.value) || 4;
+            const newValue = Math.min(currentValue + 1, 50);
+            input.value = newValue;
+        }
+
+        function decrementMaxPlayers() {
+            const input = document.getElementById('maxPlayers');
+            const currentValue = parseInt(input.value) || 4;
+            const newValue = Math.max(currentValue - 1, 2);
+            input.value = newValue;
+        }
+
+        function validateMaxPlayersInput() {
+            const input = document.getElementById('maxPlayers');
+            let value = parseInt(input.value);
+
+            if (isNaN(value) || value < 2) {
+                input.value = 2;
+            } else if (value > 50) {
+                input.value = 50;
+            }
+        }
+
+        // ============================================
+        // GROUP CREATION
+        // ============================================
 
         async function createGroup(event) {
             event.preventDefault();
