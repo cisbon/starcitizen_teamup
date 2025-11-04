@@ -1462,13 +1462,6 @@
                         <label for="filterSearch">Search</label>
                         <input type="text" id="filterSearch" placeholder="Search title or description..." autocomplete="off">
                     </div>
-
-                    <div class="filter-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="filterHasSpace" checked>
-                            <span>Show only groups with space</span>
-                        </label>
-                    </div>
                 </div>
 
                 <div class="filter-actions">
@@ -1832,7 +1825,6 @@
             document.getElementById('filterActivity').value = '';
             document.getElementById('filterShip').value = '';
             document.getElementById('filterSearch').value = '';
-            document.getElementById('filterHasSpace').checked = true;
             applyFilters();
         }
 
@@ -3639,10 +3631,6 @@
                 applyFilters();
             });
 
-            document.getElementById('filterHasSpace').addEventListener('change', (e) => {
-                currentFilters.hasSpace = e.target.checked;
-                applyFilters();
-            });
 
             document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
