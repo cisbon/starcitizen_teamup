@@ -276,6 +276,30 @@
             font-style: italic;
         }
 
+        .form-section-divider {
+            margin: 30px 0 25px 0;
+            padding: 12px 0 0 0;
+            border-top: 2px solid rgba(173, 211, 235, 0.2);
+        }
+
+        .form-section-title {
+            display: block;
+            color: #add3eb;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-section-subtitle {
+            display: block;
+            color: #666;
+            font-size: 0.75em;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
         input[type="text"],
         input[type="number"],
         select,
@@ -1287,56 +1311,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="groupTitle">Group Title *</label>
-                            <input
-                                type="text"
-                                id="groupTitle"
-                                name="groupTitle"
-                                required
-                                minlength="3"
-                                maxlength="100"
-                                placeholder="e.g., Need 3 for ERT Bounties"
-                                autocomplete="off">
-                            <span class="input-hint">3-100 characters</span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="description">Description</label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                maxlength="500"
-                                placeholder="Describe your mission, requirements, or preferences..."
-                                autocomplete="off"></textarea>
-                            <span class="input-hint">Optional, max 500 characters</span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="ship">Ship (Optional)</label>
-                            <input
-                                type="text"
-                                id="ship"
-                                name="ship"
-                                minlength="2"
-                                maxlength="50"
-                                placeholder="e.g., Idris, Carrack, Constellation"
-                                autocomplete="off">
-                            <span class="input-hint">Optional, 2-50 characters - specify the main ship for this group</span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="discordInvite">Discord Server Invite (Optional)</label>
-                            <input
-                                type="text"
-                                id="discordInvite"
-                                name="discordInvite"
-                                maxlength="255"
-                                placeholder="e.g., https://discord.gg/yourserver"
-                                autocomplete="off">
-                            <span class="input-hint">Optional - share your Discord server with group members</span>
-                        </div>
-
-                        <div class="form-group">
                             <label for="maxPlayers">Max Players *</label>
                             <div class="number-input-container">
                                 <button type="button" class="number-btn" onclick="decrementMaxPlayers()">−</button>
@@ -1352,6 +1326,60 @@
                                 <button type="button" class="number-btn" onclick="incrementMaxPlayers()">+</button>
                             </div>
                             <span class="input-hint">Between 2 and 50 players</span>
+                        </div>
+
+                        <div class="form-section-divider">
+                            <span class="form-section-title">Optional Details</span>
+                            <span class="form-section-subtitle">Customize your group with additional information</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="groupTitle">Group Title</label>
+                            <input
+                                type="text"
+                                id="groupTitle"
+                                name="groupTitle"
+                                minlength="3"
+                                maxlength="100"
+                                placeholder="e.g., Need 3 for ERT Bounties"
+                                autocomplete="off">
+                            <span class="input-hint">Optional, 3-100 characters</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                maxlength="500"
+                                placeholder="Describe your mission, requirements, or preferences..."
+                                autocomplete="off"></textarea>
+                            <span class="input-hint">Optional, max 500 characters</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ship">Ship</label>
+                            <input
+                                type="text"
+                                id="ship"
+                                name="ship"
+                                minlength="2"
+                                maxlength="50"
+                                placeholder="e.g., Idris, Carrack, Constellation"
+                                autocomplete="off">
+                            <span class="input-hint">Optional, 2-50 characters - specify the main ship for this group</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="discordInvite">Discord Server Invite</label>
+                            <input
+                                type="url"
+                                id="discordInvite"
+                                name="discordInvite"
+                                maxlength="255"
+                                placeholder="e.g., https://discord.gg/yourserver"
+                                autocomplete="off">
+                            <span class="input-hint">Optional - must be a valid URL (e.g., https://discord.gg/...)</span>
                         </div>
 
                         <div class="error-message" id="formError"></div>
@@ -1687,8 +1715,10 @@
         }
 
         function validateTitle(title) {
-            if (!title || typeof title !== 'string') return false;
+            // Title is now optional
+            if (!title || typeof title !== 'string') return true;
             const trimmed = title.trim();
+            if (trimmed === '') return true; // Empty is OK
             if (trimmed.length < VALIDATION.TITLE.MIN || trimmed.length > VALIDATION.TITLE.MAX) return false;
             return true;
         }
@@ -1703,8 +1733,28 @@
             if (!ship) return true;
             if (typeof ship !== 'string') return false;
             const trimmed = ship.trim();
+            if (trimmed === '') return true; // Empty is OK
             if (trimmed.length < VALIDATION.SHIP.MIN || trimmed.length > VALIDATION.SHIP.MAX) return false;
             return true;
+        }
+
+        function validateDiscordUrl(url) {
+            // Discord invite is optional
+            if (!url || typeof url !== 'string') return true;
+            const trimmed = url.trim();
+            if (trimmed === '') return true; // Empty is OK
+
+            // Must be a valid URL
+            try {
+                const urlObject = new URL(trimmed);
+                // Must use http or https protocol
+                if (urlObject.protocol !== 'http:' && urlObject.protocol !== 'https:') {
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
         }
 
         function validateActivityType(activityType) {
@@ -2242,8 +2292,13 @@
                     return;
                 }
 
+                if (!validateMaxPlayers(maxPlayers)) {
+                    showError('Max players must be between 2 and 50.');
+                    return;
+                }
+
                 if (!validateTitle(groupTitle)) {
-                    showError('Title must be between 3 and 100 characters.');
+                    showError('Title must be between 3 and 100 characters if provided.');
                     return;
                 }
 
@@ -2257,15 +2312,20 @@
                     return;
                 }
 
-                if (!validateMaxPlayers(maxPlayers)) {
-                    showError('Max players must be between 2 and 50.');
+                if (!validateDiscordUrl(discordInvite)) {
+                    showError('Discord invite must be a valid URL (e.g., https://discord.gg/yourserver).');
                     return;
                 }
+
+                // Generate default title if none provided
+                const finalTitle = groupTitle && groupTitle.trim()
+                    ? groupTitle.trim()
+                    : `${activityType} Group`;
 
                 const groupData = {
                     creator_handle: creatorHandle,
                     activity_type: activityType,
-                    title: groupTitle,
+                    title: finalTitle,
                     description: description || '',
                     ship: ship || '',
                     discord_invite: discordInvite || '',
@@ -2289,7 +2349,7 @@
 
                 // Add to My Groups localStorage
                 addMyGroup(data.group.id, {
-                    title: groupTitle,
+                    title: finalTitle,
                     activity_type: activityType,
                     ship: ship,
                     max_players: maxPlayers
@@ -3131,6 +3191,15 @@
 
             const form = document.getElementById('createGroupForm');
             form.addEventListener('submit', createGroup);
+
+            // Auto-fill creator handle from localStorage if available
+            const storedHandle = getStoredPlayerHandle();
+            if (storedHandle) {
+                const creatorHandleInput = document.getElementById('creatorHandle');
+                if (creatorHandleInput) {
+                    creatorHandleInput.value = storedHandle;
+                }
+            }
 
             // Set up filter listeners
             document.getElementById('filterActivity').addEventListener('change', (e) => {
