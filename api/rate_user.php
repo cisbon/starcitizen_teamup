@@ -2,7 +2,8 @@
 /**
  * Rate User API Endpoint
  * POST /api/rate_user.php
- * Allows rating a user (thumbs up/down) once per day
+ * Allows rating a user (thumbs up/down)
+ * Each IP can only rate each player once (but can update their rating)
  */
 
 define('API_ACCESS', true);
@@ -48,32 +49,25 @@ try {
 
     $pdo = getDbConnection();
 
-    // Check if this IP has already rated this user today
-    $today = date('Y-m-d');
+    // Use INSERT ... ON DUPLICATE KEY UPDATE to either insert or update
+    // This prevents the table from growing indefinitely
+    // Each (rated_by_ip, player_handle) pair will have only ONE entry
     $stmt = $pdo->prepare("
-        SELECT id FROM starcitizen_teamup_user_ratings
-        WHERE rated_by_ip = ?
-        AND player_handle = ?
-        AND DATE(rated_at) = ?
-    ");
-    $stmt->execute([$clientIp, $playerHandle, $today]);
-
-    if ($stmt->fetch()) {
-        http_response_code(429);
-        echo json_encode(['error' => 'You can only rate this user once per day']);
-        exit;
-    }
-
-    // Insert rating
-    $stmt = $pdo->prepare("
-        INSERT INTO starcitizen_teamup_user_ratings (player_handle, rating, rated_by_ip)
-        VALUES (?, ?, ?)
+        INSERT INTO starcitizen_teamup_user_ratings (player_handle, rating, rated_by_ip, rated_at)
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+            rating = VALUES(rating),
+            rated_at = NOW()
     ");
     $stmt->execute([$playerHandle, $rating, $clientIp]);
 
+    // Check if this was an insert or update
+    $wasUpdate = $pdo->lastInsertId() == 0;
+
     echo json_encode([
         'success' => true,
-        'message' => 'Rating submitted successfully'
+        'message' => $wasUpdate ? 'Rating updated successfully' : 'Rating submitted successfully',
+        'action' => $wasUpdate ? 'updated' : 'created'
     ]);
 
 } catch (PDOException $e) {

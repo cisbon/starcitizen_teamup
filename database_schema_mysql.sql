@@ -160,6 +160,8 @@ CREATE TABLE IF NOT EXISTS `starcitizen_teamup_feedback` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User Ratings Table
+-- Each IP can only rate each player once (but can update their rating)
+-- This prevents the table from growing indefinitely
 CREATE TABLE IF NOT EXISTS `starcitizen_teamup_user_ratings` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `player_handle` VARCHAR(50) NOT NULL,
@@ -179,5 +181,6 @@ CREATE TABLE IF NOT EXISTS `starcitizen_teamup_user_ratings` (
   INDEX `idx_player_handle` (`player_handle`),
   INDEX `idx_rated_by_ip` (`rated_by_ip`),
   INDEX `idx_rated_at` (`rated_at`),
-  UNIQUE KEY `unique_ip_handle_daily` (`rated_by_ip`, `player_handle`, `rated_at`)
+  -- Unique constraint: each IP can only rate each player once
+  UNIQUE KEY `unique_ip_handle` (`rated_by_ip`, `player_handle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

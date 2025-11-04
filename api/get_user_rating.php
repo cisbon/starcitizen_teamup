@@ -42,16 +42,16 @@ try {
     $stmt->execute([$playerHandle]);
     $ratingData = $stmt->fetch();
 
-    // Check if current IP can rate this user (not rated today)
-    $today = date('Y-m-d');
+    // Check if current IP has already rated this user
+    // If they have, they can update their rating (can_rate will be false to hide buttons)
     $stmt = $pdo->prepare("
-        SELECT id FROM starcitizen_teamup_user_ratings
+        SELECT rating FROM starcitizen_teamup_user_ratings
         WHERE rated_by_ip = ?
         AND player_handle = ?
-        AND DATE(rated_at) = ?
     ");
-    $stmt->execute([$clientIp, $playerHandle, $today]);
-    $canRate = !$stmt->fetch();
+    $stmt->execute([$clientIp, $playerHandle]);
+    $existingRating = $stmt->fetch();
+    $canRate = !$existingRating; // Can only rate if never rated before
 
     echo json_encode([
         'success' => true,
